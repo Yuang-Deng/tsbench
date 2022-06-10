@@ -11,3 +11,9 @@ RUN pip install poetry==1.1.6 \
 COPY poetry.lock pyproject.toml /dependencies/
 RUN cd /dependencies \
     && poetry install --no-dev --no-root --no-interaction --no-ansi
+
+RUN pip uninstall autogluon -y
+# TODO fix the autogluon version
+RUN git clone https://github.com/awslabs/autogluon.git
+WORKDIR /autogluon/
+RUN ./full_install.sh

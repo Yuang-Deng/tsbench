@@ -20,7 +20,11 @@ from gluonts.env import env
 from gluonts.evaluation.backtest import make_evaluation_predictions
 from gluonts.model.forecast import QuantileForecast, SampleForecast
 from gluonts.model.predictor import ParallelizedPredictor, Predictor
-from gluonts.support.util import maybe_len
+try:
+    # TODO this problem may be caused by the version of gluonts?
+    from gluonts.support.util import maybe_len
+except:
+    from gluonts.itertools import maybe_len
 from pandas.tseries.frequencies import to_offset
 from tqdm.auto import tqdm
 from .quantile import QuantileForecasts

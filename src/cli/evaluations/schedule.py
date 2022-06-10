@@ -23,7 +23,8 @@ from tsbench.evaluations.aws import default_session
 from tsbench.evaluations.aws.ecr import image_uri
 from tsbench.evaluations.aws.framework import CustomFramework
 from tsbench.evaluations.metrics.sagemaker import metric_definitions
-from ._main import evaluations
+from cli.evaluations._main import evaluations
+# from ._main import evaluations
 
 
 @evaluations.command(short_help="Schedule evaluations on AWS Sagemaker.")
@@ -204,6 +205,9 @@ def schedule(
             },
         )
 
+        estimator.framework_version = '0.0.1',
+        estimator.py_version = '3.8'
+
         while True:
             # Try fitting the estimator
             try:
@@ -225,3 +229,5 @@ def schedule(
         print(f">>> Launched job: {estimator.latest_training_job.name}")  # type: ignore
 
     print(">>> Successfully scheduled all training jobs.")
+
+schedule()

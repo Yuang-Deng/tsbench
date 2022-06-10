@@ -8,6 +8,9 @@ __pycache__/
 .mypy_cache/
 .ipynb_checkpoints/
 
+#poetry
+poetry.lock
+
 # Node
 node_modules/
 
