@@ -1,4 +1,4 @@
-seeds: [42, 137]
+seeds: [42]
 datasets:
   # - exchange_rate # TODO this dataset will cause a problem
   # - electricity
@@ -9,39 +9,47 @@ datasets:
   # - m3_quarterly
   # - m3_yearly
   # - m3_other
-  - m4_hourly
-  - m4_daily
-  - m4_weekly
-  - m4_monthly
-  - m4_quarterly
-  - m4_yearly
-  - m5
-  - tourism_monthly
-  - tourism_quarterly
-  - tourism_yearly
-  - nn5
-  - london_smart_meters
-  - wind_farms
-  - car_parts
-  - dominick
-  - fred_md
-  - san_francisco_traffic
-  - pedestrian_count
-  - hospital
-  - covid_deaths
-  - kdd_2018
-  - cif_2016
-  - australian_electricity_demand
-  - bitcoin
-  - rideshare
-  - vehicle_trips
-  - weather
-  - temperature_rain
-  - m1_yearly
-  - m1_quarterly
-  - m1_monthly
-  - rossmann
-  - walmart
-  - restaurant
+  # - m4_hourly
+  # - m4_daily
+  # - m4_weekly
+  # - m4_monthly
+  # - m4_quarterly
+  # - m4_yearly
+  # - m5
+  # - tourism_monthly
+  # - tourism_quarterly
+  # - tourism_yearly
+  # - nn5
+  # - london_smart_meters
+  # - wind_farms
+  # - car_parts
+  # - dominick
+  # - fred_md
+  # - san_francisco_traffic
+  # - pedestrian_count
+  # - hospital
+  # - covid_deaths
+  # - kdd_2018
+  # - cif_2016
+  # - australian_electricity_demand
+  # - bitcoin
+  # - rideshare
+  # - vehicle_trips
+  # - weather
+  # - temperature_rain
+  # - m1_yearly
+  # - m1_quarterly
+  # - m1_monthly
+  # - rossmann
+  # - walmart
+  # - restaurant
+
+  - solar
 models:
-  autogluon: []
+  autogluon: 
+    - key: presets
+      values: [medium_quality, good_quality]
+    # - key: auto_hyperparameters
+    #   values: [default, default_hpo]
+      # values: [default]
+      # values: [low_quality_hpo, low_quality, medium_quality, good_quality, high_quality, best_quality]

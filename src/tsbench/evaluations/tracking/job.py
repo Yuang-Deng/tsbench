@@ -12,6 +12,7 @@
 # permissions and limitations under the License.
 
 from __future__ import annotations
+import logging
 import json
 import math
 import os
@@ -211,6 +212,7 @@ class Job:
         with (target / "config.json").open("w+") as f:
             json.dump(self.config, f, indent=4)
         with (target / "performance.json").open("w+") as f:
+            logging.info('dump performance in %s', target / "performance.json")
             json.dump(self.performance, f, indent=4)
 
         # As well as the forecasts (we ignore val forecasts as they are never used)

@@ -557,6 +557,9 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
     The ETS estimator config.
     """
 
+    presets: str = None
+    auto_hyperparameters: str = None
+
     @classmethod
     def name(cls) -> str:
         return "autogluon"
@@ -576,5 +579,7 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
         return AutoGluonEstimator(
             freq=freq,
             prediction_length=prediction_length,
+            presets=self.presets,
+            hyperparameters=self.auto_hyperparameters,
             # callbacks=callbacks
         )

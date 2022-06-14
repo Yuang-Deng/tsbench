@@ -1,3 +1,5 @@
+import logging
+from time import time
 from typing import Callable, Dict, Iterator, List, NamedTuple, Optional
 
 import numpy as np
@@ -81,6 +83,8 @@ class AutoGluonEstimator(Estimator):
         freq: str,
         prediction_length: int,
         autogluonts_params: Optional[Dict] = None,
+        presets: Optional[str] = None,
+        hyperparameters: Optional[str] = None,
         # callbacks: Optional[List[Callback]] = None,
     ) -> None:
         super().__init__(freq=freq, prediction_length=prediction_length)
@@ -99,6 +103,8 @@ class AutoGluonEstimator(Estimator):
         self.prediction_length = prediction_length
         self.autogluonts_params = autogluonts_params
         self.autogluonts = TimeSeriesPredictor(prediction_length=prediction_length)
+        self.presets = presets
+        self.hyperparameters = hyperparameters
 
     def train_model(
         self,
@@ -112,8 +118,13 @@ class AutoGluonEstimator(Estimator):
 
         train_dataframe = TimeSeriesDataFrame(training_data)
         valid_dataframe = TimeSeriesDataFrame(validation_data)
+        # train_dataframe.index.levels[1].freq = self.freq
+        # print(train_dataframe.freq)
+        # train_dataframe.freq = self.freq
 
-        tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, time_limit=120)
+        tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=20)
+        # print('autogluon hyperparameter:', self.hyperparameters)
+        # tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, hyperparameters=self.hyperparameters, time_limit=60)
 
         return AutoGluonPredictor(tspredictor, prediction_length=self.prediction_length, freq=self.freq)
 

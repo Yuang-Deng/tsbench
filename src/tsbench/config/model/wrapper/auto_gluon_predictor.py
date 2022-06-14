@@ -1,3 +1,4 @@
+import logging
 from tkinter.messagebox import NO
 from typing import Iterator, Optional
 
@@ -48,6 +49,19 @@ class AutoGluonPredictor(Predictor):
     ) -> Iterator[QuantileForecast]:
         data_frame = TimeSeriesDataFrame(dataset)
         outputs = self.predictor.predict(data_frame)
+        # ["MASE", "MAPE", "sMAPE", "mean_wQuantileLoss"]
+        try:
+            mase_score = self.predictor.score(data_frame, metric='MASE')
+            mape_score = self.predictor.score(data_frame, metric='MAPE')
+            smape_score = self.predictor.score(data_frame, metric='sMAPE')
+            mean_wquantileloss_score = self.predictor.score(data_frame, metric='mean_wQuantileLoss')
+            print('autogluon MASE', str(mase_score))
+            print('autogluon MAPE', str(mape_score))
+            print('autogluon sMAPE', str(smape_score))
+            print('autogluon mean_wQuantileLoss', str(mean_wquantileloss_score))
+        except:
+            print('an error has been raised when calculate autogluon score')
+
         metas = outputs.index.values
         cancat_len = outputs.shape[0]
         assert cancat_len % self.prediction_length == 0
