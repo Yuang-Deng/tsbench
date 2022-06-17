@@ -1,40 +1,85 @@
-# AWS enviroment
-AWS CLI configuration, refer to https://quip-amazon.com/uG7bAb0veru6/tsbench-setup
+# clone repository and conda 
+```bash
+git clone https://github.com/Yuang-Deng/tsbench.git
+wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
+```
 
-# install
-### autogluon
-```bash 
-got clone https://github.com/awslabs/autogluon.git 
-sh full_install.sh
-```
-### gluonts 
+# install on EC2
 ```bash
-got clone https://github.com/awslabs/gluon-ts.git
-pip install -e .
-```
-### tsbench
-```bash
-git cloen https://github.com/Yuang-Deng/tsbench.git
+sh Anaconda3-2022.05-Linux-x86_64.sh 
+conda create -n tsbench python=3.8
+conda activate tsbench
+sudo apt-get update # this is necessary after jun17, maybe the server has change ip? If no this command, an error "E: Failed to fetch http://us-west-2.ec2.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-libc-dev_5.4.0-109.123_amd64.deb  404  Not Found [IP: 34.212.136.213 80]" will be raised
+
+# sudo apt-get install gcc # this will be unnecessary after sudo apt-get update
+
+pip install poetry
 poetry install
+
+# this will be not necessary, please install the packages which can not successfully installed by poetry
+pip install sagemaker
+...
 ```
 
-# build docker image and upload to ecr
+
+
+## run schedule to launch job in sagemaker
+### AWS CLI config
+before run schedule, we must config the aws cli
+```bash
+sudo apt install awscli
+aws configure
+AWS Access Key ID [None]: your id
+AWS Secret Access Key [None]: your key
+Default region name [None]: us-west-2
+Default output format [None]: json
+```
+### docker image build
 the dockrfile is modified by me to install autogluon in docker,
 before build docker, you may need to create a repository in ECR, and set a tag for your image
 ```bash
 sh bin/build-container.sh
 ```
 
-# I use vscode to run evaluate and schedule script, this is my launch.json
-the sagemaker role may need to modified
+The install of autogluon on docker is install manually, because use poetry to install the latest version of autogluon with source code will need setup.py, but the autogluon has no setup.py, if want use poetry install it, we may need wait the latest version of autogluon released as wheel package.
+
+When build docker image, it will clone the latest version of autogluon
+
+### run
+```bash
+python ./src/cli/evaluations/schedule.py \
+    --config_path=./configs/benchmark/auto/autogluon.yaml \
+    --sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759 \
+    --experiment=tsbench-autogluon-runbook-test \
+    --data_bucket=yuangbucket/tsbench \
+    --data_bucket_prefix=data \
+    --output_bucket=yuangbucket/tsbench \
+    --output_bucket_prefix=evaluations \
+    --docker_image=tsbench-autogluon:jun17 \
+    --max_runtime=120 \
+```
+
+## run evaluate to debug locally with single dataset
+### dataset download
+before run evaluate locally, the dataset must downloaded and save at /home/ubuntu/data/datasets
+the datasets is upload to my s3 bucket, s3://yuangbucket/tsbench/data/
+### use latest version of autogluon
+I will try to install latest version from source code use poetry, but now, we need install the latest version manually.
+```bash
+git clone https://github.com/awslabs/autogluon.git
+./full_install.sh
+```
+### run
+```bash
+python ./src/evaluate.py \
+    --dataset=m4_hourly \
+    --model=autogluon
+```
+
+
+## if use vscode, this is my launch.json
 ```python
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
             "name": "Python: schedule",
             "type": "python",
             "request": "launch",
@@ -44,12 +89,13 @@ the sagemaker role may need to modified
             "args": [
                 "--config_path=./configs/benchmark/auto/autogluon.yaml",
                 "--sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759",
-                "--experiment=tsbench-autogluon",
+                // "--experiment=tsbench-autogluon-log-parse-test",
+                "--experiment=tsbench-autogluon-runbook-test",
                 "--data_bucket=yuangbucket/tsbench",
                 "--data_bucket_prefix=data",
                 "--output_bucket=yuangbucket/tsbench",
                 "--output_bucket_prefix=evaluations",
-                "--docker_image=tsbench-autogluon:jun14",
+                "--docker_image=tsbench-autogluon:jun17",
                 "--max_runtime=120"
             ]
         },
@@ -61,14 +107,16 @@ the sagemaker role may need to modified
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                // "--dataset=m4_hourly",
+                "--dataset=m4_hourly",
                 // "--dataset=m4_yearly",
                 // "--dataset=wind_farms",
-                "--dataset=london_smart_meters",
+                // "--dataset=london_smart_meters",
                 // "--dataset=vehicle_trips",
                 "--model=autogluon"
             ]
         }
-    ]
-}
 ```
+
+## some issue with error raised with failed poetry install
+after run poetry install, use pip list to check if the tsbench is installed 
+if tsbench is not installed, but run evaluate and schedule need tsbench, we can delete the line after line 10, and use poetry install
