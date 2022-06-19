@@ -558,6 +558,7 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
     """
 
     presets: str = None
+    run_time: float = None
     auto_hyperparameters: str = None
 
     @classmethod
@@ -580,6 +581,7 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
             freq=freq,
             prediction_length=prediction_length,
             presets=self.presets,
+            time_limit=self.run_time,
             hyperparameters=self.auto_hyperparameters,
             # callbacks=callbacks
         )

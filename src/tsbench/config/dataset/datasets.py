@@ -312,27 +312,27 @@ class M4YearlyDatasetConfig(GluonTsDatasetConfig):
         return False
 
 
-@register_dataset
-@dataclass(frozen=True)
-class M5DatasetConfig(GluonTsDatasetConfig):
-    """
-    The dataset configuration for the `m5` dataset.
-    """
-
-    @classmethod
-    def name(cls) -> str:
-        return "m5"
-
-    @property
-    def max_training_time(self) -> int:
-        return 28800
-
-    def _materialize(self, directory: Path, regenerate: bool = False) -> None:
-        shutil.copytree(
-            Path.home() / ".mxnet" / "gluon-ts" / "datasets" / "m5",
-            directory / "m5",
-        )
-        super()._materialize(directory, regenerate=True)
+# @register_dataset
+# @dataclass(frozen=True)
+# class M5DatasetConfig(GluonTsDatasetConfig):
+#     """
+#     The dataset configuration for the `m5` dataset.
+#     """
+#
+#     @classmethod
+#     def name(cls) -> str:
+#         return "m5"
+#
+#     @property
+#     def max_training_time(self) -> int:
+#         return 28800
+#
+#     def _materialize(self, directory: Path, regenerate: bool = False) -> None:
+#         shutil.copytree(
+#             Path.home() / ".mxnet" / "gluon-ts" / "datasets" / "m5",
+#             directory / "m5",
+#         )
+#         super()._materialize(directory, regenerate=True)
 
 
 @register_dataset
@@ -403,32 +403,32 @@ class NN5DatasetConfig(GluonTsDatasetConfig):
         return "nn5_daily_without_missing"
 
 
-@register_dataset
-@dataclass(frozen=True)
-class LondonSmartMetersDatasetConfig(MonashDatasetConfig):
-    """
-    The dataset configuration for "London Smart Meters".
-    """
-
-    @classmethod
-    def name(cls) -> str:
-        return "london_smart_meters"
-
-    @property
-    def max_training_time(self) -> int:
-        return 28800
-
-    @property
-    def _file(self) -> str:
-        return "london_smart_meters_dataset_without_missing_values.zip"
-
-    @property
-    def _record(self) -> str:
-        return "4656091"
-
-    @property
-    def _prediction_length(self) -> int:
-        return 48
+# @register_dataset
+# @dataclass(frozen=True)
+# class LondonSmartMetersDatasetConfig(MonashDatasetConfig):
+#     """
+#     The dataset configuration for "London Smart Meters".
+#     """
+#
+#     @classmethod
+#     def name(cls) -> str:
+#         return "london_smart_meters"
+#
+#     @property
+#     def max_training_time(self) -> int:
+#         return 28800
+#
+#     @property
+#     def _file(self) -> str:
+#         return "london_smart_meters_dataset_without_missing_values.zip"
+#
+#     @property
+#     def _record(self) -> str:
+#         return "4656091"
+#
+#     @property
+#     def _prediction_length(self) -> int:
+#         return 48
 
 
 @register_dataset
@@ -984,60 +984,60 @@ class M1MonthlyDatasetConfig(MonashDatasetConfig):
         return 18
 
 
-@register_dataset
-@dataclass(frozen=True)
-class RossmannDatasetConfig(KaggleDatasetConfig):
-    """
-    The dataset configuration for the "Rossmann Store Sales" Kaggle
-    competition.
-    """
-
-    @classmethod
-    def name(cls) -> str:
-        return "rossmann"
-
-    @property
-    def max_training_time(self) -> int:
-        return 7200
-
-    @property
-    def _link(self) -> str:
-        return "https://www.kaggle.com/c/rossmann-store-sales"
-
-    def _extract_data(
-        self, path: Path
-    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-        # Read the raw data
-        data = cast(pd.DataFrame, pd.read_csv(path / "train.csv"))
-        stores = cast(pd.DataFrame, pd.read_csv(path / "store.csv"))
-
-        # Generate GluonTS dataset
-        metadata = {
-            "freq": "D",
-            "prediction_length": 48,
-            "feat_static_cat": [
-                {
-                    "name": "store",
-                    "cardinality": len(stores),
-                },
-            ],
-        }
-
-        series = []
-        for i, store_data in data.groupby("Store"):
-            sorted_data = store_data.sort_values("Date")
-            series.append(
-                {
-                    "item_id": int(i) - 1,
-                    "start": sorted_data.Date.min(),
-                    "target": sorted_data.Sales.to_list(),
-                    "feat_static_cat": [
-                        int(i) - 1,
-                    ],
-                }
-            )
-
-        return metadata, series
+# @register_dataset
+# @dataclass(frozen=True)
+# class RossmannDatasetConfig(KaggleDatasetConfig):
+#     """
+#     The dataset configuration for the "Rossmann Store Sales" Kaggle
+#     competition.
+#     """
+#
+#     @classmethod
+#     def name(cls) -> str:
+#         return "rossmann"
+#
+#     @property
+#     def max_training_time(self) -> int:
+#         return 7200
+#
+#     @property
+#     def _link(self) -> str:
+#         return "https://www.kaggle.com/c/rossmann-store-sales"
+#
+#     def _extract_data(
+#         self, path: Path
+#     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+#         # Read the raw data
+#         data = cast(pd.DataFrame, pd.read_csv(path / "train.csv"))
+#         stores = cast(pd.DataFrame, pd.read_csv(path / "store.csv"))
+#
+#         # Generate GluonTS dataset
+#         metadata = {
+#             "freq": "D",
+#             "prediction_length": 48,
+#             "feat_static_cat": [
+#                 {
+#                     "name": "store",
+#                     "cardinality": len(stores),
+#                 },
+#             ],
+#         }
+#
+#         series = []
+#         for i, store_data in data.groupby("Store"):
+#             sorted_data = store_data.sort_values("Date")
+#             series.append(
+#                 {
+#                     "item_id": int(i) - 1,
+#                     "start": sorted_data.Date.min(),
+#                     "target": sorted_data.Sales.to_list(),
+#                     "feat_static_cat": [
+#                         int(i) - 1,
+#                     ],
+#                 }
+#             )
+#
+#         return metadata, series
 
 
 @register_dataset

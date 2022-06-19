@@ -84,6 +84,7 @@ class AutoGluonEstimator(Estimator):
         prediction_length: int,
         autogluonts_params: Optional[Dict] = None,
         presets: Optional[str] = None,
+        time_limit: Optional[float] = None,
         hyperparameters: Optional[str] = None,
         # callbacks: Optional[List[Callback]] = None,
     ) -> None:
@@ -104,6 +105,7 @@ class AutoGluonEstimator(Estimator):
         self.autogluonts_params = autogluonts_params
         self.autogluonts = TimeSeriesPredictor(prediction_length=prediction_length)
         self.presets = presets
+        self.time_limit = time_limit
         self.hyperparameters = hyperparameters
 
     def train_model(
@@ -122,8 +124,8 @@ class AutoGluonEstimator(Estimator):
         # print(train_dataframe.freq)
         # train_dataframe.freq = self.freq
 
-        tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=20)
-        # print('autogluon hyperparameter:', self.hyperparameters)
+        print(f"*** calling autogluon with presets={self.presets}, time_limit={self.time_limit}")
+        tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=self.time_limit)
         # tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, hyperparameters=self.hyperparameters, time_limit=60)
 
         return AutoGluonPredictor(tspredictor, prediction_length=self.prediction_length, freq=self.freq)

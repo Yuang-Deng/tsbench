@@ -1,4 +1,4 @@
-seeds: [42]
+seeds: [42, 137, 69]
 datasets:
   # - exchange_rate # TODO this dataset will cause a problem
   # - electricity
@@ -70,7 +70,7 @@ datasets:
   # - m3_other
 
   # the dataset in auto pytorch
-  - m3_yearly #segment falt
+  # - m3_yearly #segment falt
   - m3_quarterly
   - m3_monthly
   - m3_other
@@ -87,23 +87,11 @@ datasets:
   - hospital
   - covid_deaths
 
-
-
-
-
-
-
-
   # small test dataset 
   # - solar
 models:
   autogluon: 
     - key: run_time
-      values: [3600]
+      values: [36000]
     - key: presets
-      # values: [medium_quality, good_quality]
-      values: [medium_quality]
-    # - key: auto_hyperparameters
-    #   values: [default, default_hpo]
-      # values: [default]
-      # values: [low_quality_hpo, low_quality, medium_quality, good_quality, high_quality, best_quality]
+      values: [best_quality] #"best_quality"
