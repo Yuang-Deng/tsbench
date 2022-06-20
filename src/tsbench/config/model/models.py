@@ -559,6 +559,7 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
 
     presets: str = None
     auto_hyperparameters: str = None
+    run_time: int = 1 * 60 * 60
 
     @classmethod
     def name(cls) -> str:
@@ -581,5 +582,6 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
             prediction_length=prediction_length,
             presets=self.presets,
             hyperparameters=self.auto_hyperparameters,
+            run_time=self.run_time,
             # callbacks=callbacks
         )

@@ -20,6 +20,7 @@ import shutil
 from pathlib import Path
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
+from pyrsistent import inc
 from tsbench.config import MODEL_REGISTRY
 from tsbench.evaluations.aws import Analysis, TrainingJob
 from tsbench.evaluations.metrics import Metric, Performance
@@ -202,7 +203,7 @@ class Job:
 
         # Make sure folder exists and is empty
         if target.exists():
-            if _check_all_data_available(target):
+            if _check_all_data_available(target, include_forecasts=include_forecasts):
                 return
             shutil.rmtree(target)
 
@@ -212,7 +213,6 @@ class Job:
         with (target / "config.json").open("w+") as f:
             json.dump(self.config, f, indent=4)
         with (target / "performance.json").open("w+") as f:
-            logging.info('dump performance in %s', target / "performance.json")
             json.dump(self.performance, f, indent=4)
 
         # As well as the forecasts (we ignore val forecasts as they are never used)
@@ -241,7 +241,7 @@ class Job:
                     )
 
         # Finally check that saving all data worked as expected
-        assert _check_all_data_available(target)
+        assert _check_all_data_available(target, include_forecasts=include_forecasts)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -347,7 +347,7 @@ def _extract_performance(job: TrainingJob) -> dict[str, Any]:
         "meta": {
             "num_model_parameters": int(
                 job.metrics["num_model_parameters"][0].item()
-            ),
+            ) if job.metrics["num_model_parameters"].shape[0] > 0 else 0,
             "latency": np.mean(job.metrics["latency"]).item(),
         },
         "performances": performances,
@@ -363,10 +363,16 @@ def _extract_performance(job: TrainingJob) -> dict[str, Any]:
     return result
 
 
-def _check_all_data_available(target: Path) -> bool:
-    return (
-        (target / "config.json").exists()
-        and (target / "performance.json").exists()
-        and (target / "forecasts").exists()
-        and len(os.listdir(target / "forecasts")) in (1, 11)
-    )
+def _check_all_data_available(target: Path, include_forecasts: bool) -> bool:
+    if include_forecasts:
+        return (
+            (target / "config.json").exists()
+            and (target / "performance.json").exists()
+            and (target / "forecasts").exists()
+            and len(os.listdir(target / "forecasts")) in (1, 11)
+        )
+    else:
+        return (
+            (target / "config.json").exists()
+            and (target / "performance.json").exists()
+        )

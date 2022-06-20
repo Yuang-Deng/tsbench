@@ -13,6 +13,8 @@ sudo apt-get update # this is necessary after jun17, maybe the server has change
 
 # sudo apt-get install gcc # this will be unnecessary after sudo apt-get update
 
+cd tsbench 
+git checkout autogluon_dev
 pip install poetry
 poetry install
 
@@ -120,3 +122,27 @@ python ./src/evaluate.py \
 ## some issue with error raised with failed poetry install
 after run poetry install, use pip list to check if the tsbench is installed 
 if tsbench is not installed, but run evaluate and schedule need tsbench, we can delete the line after line 10, and use poetry install
+
+
+# collect tsbench result
+the tsbench result collect script is collect result by the experiment name of sagemaker job, the experiment name is a parameter of schedule, an experiment will run multiple different configurat, it correspond to multiple job on sagemaker, this job will have the same experiment name but with different suffix, this script will collect result by experiment name, ignore the suffix.
+
+```bash
+python ./src/cli/evaluations/download.py 
+    --experiment=tsbench-weekend-exp 
+    --include_forecasts=False 
+    --format=True 
+```
+
+git commit -m 'result collect script and run-time set'
+
+
+# modify autogluon locally and build docker image
+create a thirdparty folder to store the repository of thirdparty, now just autogluon, the docker image can be build successfully
+```bash
+cd tsbench
+mkdir thirdparty
+git clone https://github.com/awslabs/autogluon.git thirdparty/autogluon
+cd thirdparty/autogluon
+./full_install.sh
+```

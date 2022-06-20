@@ -172,6 +172,9 @@ class TrainingJob:
         """
         # Check if the logs are already available locally
         metrics_file = self._cache_dir() / "metrics.json"
+        import os
+        if os.path.exists(metrics_file):
+            os.remove(metrics_file)
         if metrics_file.exists():
             with metrics_file.open("r") as f:
                 return {
@@ -182,13 +185,24 @@ class TrainingJob:
         # If not, get them from the logs, write them to the file system and return
         metrics = {
             metric["Name"]: [
-                float(x)
+                float(x[0]) if isinstance(x, tuple) else float(x)
                 for x in re.findall(metric["Regex"], "\n".join(self.logs))
             ]
             for metric in self.info["AlgorithmSpecification"][
                 "MetricDefinitions"
             ]
         }
+        # use custmize traing time replace traing time when traing time = 0
+        if len(metrics['training_time']) == 0:
+            for (k, v) in metrics.items():
+                if '_traing_time' in k:
+                    metrics['training_time'] = v
+        # embad empty metric
+        job_num = len(metrics['training_time'])
+        for (k, v) in metrics.items():
+            if len(v) == 0:
+                metrics[k] = [0] * job_num
+
         with metrics_file.open("w+") as f:
             json.dump(metrics, f)
 
@@ -297,6 +311,7 @@ class Analysis:
         self,
         experiment: str,
         only_completed: bool = True,
+        status_list: List[str] = ['Completed'],
         include: Callable[[TrainingJob], bool] = lambda _: True,
         resolve_duplicates: bool = True,
     ):
@@ -317,13 +332,15 @@ class Analysis:
                 same hyperparameters are found.
         """
         self.experiment_name = experiment
-        training_jobs, duplicates = _fetch_training_jobs(
+        training_jobs, duplicates, other_jobs = _fetch_training_jobs(
             default_session(),
             self.experiment_name,
             only_completed,
             resolve_duplicates,
+            status_list,
         )
         self.duplicates = duplicates
+        self.other_jobs = other_jobs
         self.map = {t.name: t for t in training_jobs if include(t)}
         if len(self.map) < len(training_jobs):
             logging.warning(
@@ -364,7 +381,8 @@ def _fetch_training_jobs(
     experiment: str,
     only_completed: bool,
     resolve_duplicates: bool,
-) -> tuple[list[TrainingJob], list[TrainingJob]]:
+    status_list: List[str]
+) -> tuple[list[TrainingJob], list[TrainingJob], list[TrainingJob]]:
     """
     Fetches all training jobs which are associated with this experiment.
     """
@@ -403,9 +421,11 @@ def _fetch_training_jobs(
                 time.sleep(1)
 
     jobs = [TrainingJob(r["TrainingJob"]) for r in results]
+    other_jobs = []
 
     if only_completed:
         completed_jobs = [j for j in jobs if j.status == "Completed"]
+        other_jobs = [j for j in jobs if j.status != "Completed"]
         if len(completed_jobs) < len(jobs):
             c = Counter([j.status for j in jobs])
             d = dict(c)
@@ -439,7 +459,7 @@ def _fetch_training_jobs(
             )
         jobs = list(unique.values())
 
-    return jobs, duplicates
+    return jobs, duplicates, other_jobs
 
 
 # -------------------------------------------------------------------------------------------------
