@@ -78,6 +78,21 @@ python ./src/evaluate.py \
     --model=autogluon
 ```
 
+## run locally
+create a folder to clone autogluon code and install it.
+```bash
+cd tsbench
+mkdir thirdparty
+git clone https://github.com/awslabs/autogluon.git thirdparty/autogluon
+cd thirdparty/autogluon
+./full_install.sh
+```
+run
+```bash
+python ./src/evaluate.py 
+    --dataset=m1_yearly 
+    --model=autogluon 
+```
 
 ## if use vscode, this is my launch.json
 ```python
@@ -133,9 +148,6 @@ python ./src/cli/evaluations/download.py
     --include_forecasts=False 
     --format=True 
 ```
-
-git commit -m 'result collect script and run-time set'
-
 
 # modify autogluon locally and build docker image
 create a thirdparty folder to store the repository of thirdparty, now just autogluon, the docker image can be build successfully
