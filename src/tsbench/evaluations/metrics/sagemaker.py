@@ -35,11 +35,17 @@ def metric_definitions() -> List[Dict[str, str]]:
             "Regex": f"'validation_epoch_loss'={_FLOATING_POINT_REGEX}",
         },
         {
-            "Name": "val_ncrps",
-            "Regex": _metric_regex("val_ncrps"),
+            "Name": "val_ncprs",
+            "Regex": _metric_regex("val_ncprs"),
         },
     ]
-    return scalar_metrics + list_metrics
+    custimze_metrics = [
+        {
+            "Name": "autogluon_traing_time",
+            "Regex": f"AutoGluon TimeSeriesLearner complete, total runtime = {_FLOATING_POINT_REGEX}s"
+        }
+    ]
+    return scalar_metrics + list_metrics + custimze_metrics
 
 
 # -------------------------------------------------------------------------------------------------

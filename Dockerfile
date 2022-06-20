@@ -16,8 +16,14 @@ RUN cd /dependencies \
 RUN pip uninstall mxnet -y
 RUN pip install mxnet==1.9
 
+# install autogluon with locally code
 RUN pip uninstall autogluon -y
-# TODO fix the autogluon version
-RUN git clone https://github.com/awslabs/autogluon.git
-WORKDIR /autogluon/
+COPY thirdparty/autogluon /dependencies/autogluon/
+WORKDIR /dependencies/autogluon/
 RUN ./full_install.sh
+
+# RUN pip uninstall autogluon -y
+# # TODO fix the autogluon version
+# RUN git clone https://github.com/awslabs/autogluon.git
+# WORKDIR /autogluon/
+# RUN ./full_install.sh
