@@ -104,7 +104,6 @@ from tsbench.evaluations.training import fit_estimator
 @click.option("--nbeats_num_stacks", default=30, show_default=True)
 @click.option("--nbeats_num_blocks", default=1, show_default=True)
 @click.option("--autogluon_presets", default=None, show_default=True)
-@click.option("--autogluon_run_time", default=3600, show_default=True)
 @click.option("--autogluon_auto_hyperparameters", default=None, show_default=True)
 @click.option("--autogluon_run_time", default=1*60*60, show_default=True)
 def main(
