@@ -54,6 +54,8 @@ datasets:
 
   # rerun some error dataset 
   # - m1_monthly
+  # - m1_quarterly
+  # - m1_yearly
   # - vehicle_trips
   # - cif_2016
   # - hospital
@@ -64,28 +66,37 @@ datasets:
   # - tourism_yearly
   # - tourism_quarterly
   # - tourism_monthly
+  # - m5
   # - m4_yearly
   # - m4_quarterly
+  # - m4_monthly
+  # - dominick
+  # - temperature_rain
   # - exchange_rate
   # - m3_other
+  # - m3_yearly
+  # - m3_quarterly
+  # - m3_monthly
+
+
 
   # the dataset in auto pytorch
-  - m3_yearly #segment falt
-  - m3_quarterly
-  - m3_monthly
-  - m3_other
-  - m4_quarterly
-  - m4_monthly
-  - m4_weekly
-  - m4_daily
-  - m4_hourly
-  - m4_yearly
-  - tourism_quarterly
-  - tourism_monthly
-  - dominick
-  - weather
-  - hospital
-  - covid_deaths
+  # - m3_yearly #segment falt
+  # - m3_quarterly
+  # - m3_monthly
+  # - m3_other
+  # - m4_quarterly
+  # - m4_monthly
+  # - m4_weekly
+  # - m4_daily
+  # - m4_hourly
+  # - m4_yearly
+  # - tourism_quarterly
+  # - tourism_monthly
+  # - dominick
+  # - weather
+  # - hospital
+  # - covid_deaths
 
 
 
@@ -100,9 +111,11 @@ models:
   autogluon: 
     - key: run_time
       values: [3600]
+      # values: [432000]
     - key: presets
-      # values: [medium_quality, good_quality]
       values: [medium_quality]
+      # values: [medium_quality, good_quality]
+      # values: [medium_quality]
     # - key: auto_hyperparameters
     #   values: [default, default_hpo]
       # values: [default]

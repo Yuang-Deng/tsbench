@@ -10,6 +10,7 @@ version = "1.0.0"
 
 [tool.poetry.dependencies]
 PyYAML = "^5.4.1"
+mxnet = "1.9"
 autogluon = "^0.3.1"
 catch22 = "^0.2.0"
 click = "^7.1.2"
@@ -18,7 +19,6 @@ fbprophet = "^0.7.1"
 gluonts = {git = "https://github.com/awslabs/gluon-ts.git", rev = "7c94c1149875f6ad2e0d7b0a6bcee952f14d3fb1"}
 holidays = "^0.11.1"
 lightkit = "^0.3.6"
-mxnet = "1.8.0.post0"
 numpy = "^1.21.4"
 pandas = "^1.2.4"
 plotly = "^5.3.1"

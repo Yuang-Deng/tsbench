@@ -115,6 +115,8 @@ def _format(source: Path, experiment: Optional[str], other_jobs: List[TrainingJo
     models = os.listdir(source)
     for model in models:
         model_dir = Path.joinpath(source, model)
+        if Path.is_file(model_dir):
+            continue
         datasets = os.listdir(model_dir)
         for ds in datasets:
             # TODO collect dataset we need, try collect all dataset but just print we need
@@ -153,18 +155,15 @@ def _format(source: Path, experiment: Optional[str], other_jobs: List[TrainingJo
             res.update(job.hyperparameters)
             res['status'] = job.status
             abnormal_results.append(res)
-    print(json.dumps(abnormal_results, indent=2))
+            print(res['model'], ' \t', res['dataset'], ' \t', res['status'])
     
     if experiment is None:
         json.dump(results, open(Path.joinpath(source, 'tsbench.json'), 'w+'), indent=2)
     else:
         json.dump(results, open(Path.joinpath(source, experiment + '.json'), 'w+'), indent=2)
         print('results of complemented experiments is saved in', Path.joinpath(source, experiment + '.json'))
-        json.dump(abnormal_results, open(Path.joinpath(source, experiment + '-others.json'), 'w+'), indent=2)
-        print('results of others experiments is saved in', Path.joinpath(source, experiment + '-others.json'))
-
-    
-
+        json.dump(abnormal_results, open(Path.joinpath(source, experiment + '-abnormal.json'), 'w+'), indent=2)
+        print('results of others experiments is saved in', Path.joinpath(source, experiment + '-abnormal.json'))
 
 def _download_public_evaluations(
     include_forecasts: bool, evaluations_path: Path
@@ -238,4 +237,4 @@ def _extract_object_names(response: Dict[str, Any]) -> List[str]:
 def _move_job(job: Job, target: Path, include_forecasts: bool):
     job.save(target, include_forecasts=include_forecasts)
 
-download()
+# download()

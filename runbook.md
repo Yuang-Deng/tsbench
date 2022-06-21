@@ -14,7 +14,7 @@ sudo apt-get update # this is necessary after jun17, maybe the server has change
 # sudo apt-get install gcc # this will be unnecessary after sudo apt-get update
 
 cd tsbench 
-git checkout autogluon_dev
+git checkout autogluon_dev  # the latest version of code is in branch autogluon_dev
 pip install poetry
 poetry install
 
@@ -27,7 +27,9 @@ pip install sagemaker
 
 ## run schedule to launch job in sagemaker
 ### AWS CLI config
-before run schedule, we must config the aws cli
+before run schedule, we must config the aws cli.
+
+In aws configure, only region is needed, they others can be left empty.
 ```bash
 sudo apt install awscli
 aws configure
@@ -46,6 +48,9 @@ sh bin/build-container.sh
 The install of autogluon on docker is install manually, because use poetry to install the latest version of autogluon with source code will need setup.py, but the autogluon has no setup.py, if want use poetry install it, we may need wait the latest version of autogluon released as wheel package.
 
 When build docker image, it will clone the latest version of autogluon
+
+### an issue
+when run python scripts blow, you need to add one line on the script which you want to run to invoke the function, when you run other scripts, you must delet the line you added before, otherwise there will be some errors.
 
 ### run
 ```bash
@@ -75,7 +80,7 @@ git clone https://github.com/awslabs/autogluon.git
 ```bash
 python ./src/evaluate.py \
     --dataset=m4_hourly \
-    --model=autogluon
+    --model=autogluon \
 ```
 
 ## run locally
@@ -89,14 +94,20 @@ cd thirdparty/autogluon
 ```
 run
 ```bash
-python ./src/evaluate.py 
-    --dataset=m1_yearly 
-    --model=autogluon 
+python ./src/evaluate.py \
+    --dataset=m1_yearly \
+    --model=autogluon \
 ```
 
 ## if use vscode, this is my launch.json
 ```python
 {
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
             "name": "Python: schedule",
             "type": "python",
             "request": "launch",
@@ -106,8 +117,7 @@ python ./src/evaluate.py
             "args": [
                 "--config_path=./configs/benchmark/auto/autogluon.yaml",
                 "--sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759",
-                // "--experiment=tsbench-autogluon-log-parse-test",
-                "--experiment=tsbench-autogluon-runbook-test",
+                "--experiment=tsbench-rerun-dataset",
                 "--data_bucket=yuangbucket/tsbench",
                 "--data_bucket_prefix=data",
                 "--output_bucket=yuangbucket/tsbench",
@@ -124,14 +134,36 @@ python ./src/evaluate.py
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                "--dataset=m4_hourly",
-                // "--dataset=m4_yearly",
-                // "--dataset=wind_farms",
-                // "--dataset=london_smart_meters",
-                // "--dataset=vehicle_trips",
+                "--dataset=m1_yearly",
                 "--model=autogluon"
             ]
+        },
+        {
+            "name": "Python: downlooad metrics",
+            "type": "python",
+            "request": "launch",
+            "program": "./src/cli/evaluations/download.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--experiment=tsbench-weekend-exp",
+                "--include_forecasts=False",
+                "--format=True",
+            ]
+        },
+        {
+            "name": "Python: visualization",
+            "type": "python",
+            "request": "launch",
+            "program": "./src/cli/evaluations/result_visualization.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--experiment=tsbench-weekend-exp",
+            ]
         }
+    ]
+}
 ```
 
 ## some issue with error raised with failed poetry install
@@ -143,10 +175,19 @@ if tsbench is not installed, but run evaluate and schedule need tsbench, we can 
 the tsbench result collect script is collect result by the experiment name of sagemaker job, the experiment name is a parameter of schedule, an experiment will run multiple different configurat, it correspond to multiple job on sagemaker, this job will have the same experiment name but with different suffix, this script will collect result by experiment name, ignore the suffix.
 
 ```bash
-python ./src/cli/evaluations/download.py 
+python ./src/cli/evaluations/download.py \
+    --experiment=tsbench-weekend-exp \
+    --include_forecasts=False \
+    --format=True \
+```
+
+if format=True, the results will be print as a table in terminal, the abnormal results will be print as json in terminal, all results will be store as json file.
+
+if the results are stored as json file, the result_visualization can be used to visualiza the results again.
+
+```bash
+python ./src/cli/evaluations/result_visualization.py \
     --experiment=tsbench-weekend-exp 
-    --include_forecasts=False 
-    --format=True 
 ```
 
 # modify autogluon locally and build docker image

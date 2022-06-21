@@ -27,5 +27,13 @@ lightning_logs/
 # Autogluon
 AutogluonModels/
 
+# temo file 
+temp_*
+autopytorch1h_result.json
+metrics.tar.gz
+thirdparty/*
+tsbench-weekend-exp-others.json
+tsbench-weekend-exp.json
+
 # Submodules
 vendor/

@@ -9,7 +9,7 @@ REGISTRY=$AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com
 
 echo "Building image..."
 docker build \
-    -t $REGISTRY/tsbench-autogluon:jun14 \
+    -t $REGISTRY/tsbench-autogluon:jun20localtest \
     -f Dockerfile .
 
 echo "Logging in to ECR..."
@@ -17,4 +17,4 @@ echo $ECR_PASSWORD | \
     docker login --username AWS --password-stdin $REGISTRY
 
 echo "Pushing image..."
-docker push $REGISTRY/tsbench-autogluon:jun14
+docker push $REGISTRY/tsbench-autogluon:jun20localtest

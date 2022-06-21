@@ -11,11 +11,17 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
+import json
 from pathlib import Path
+from typing_extensions import Required
+from unittest import result
 import click
+import os
+import pandas as pd
 from tsbench.constants import DEFAULT_EVALUATIONS_PATH
 from tsbench.utils import compress_directory
 from cli.evaluations._main import evaluations
+from cli.evaluations.download import BASELINES, METRICS, DATASETS
 # from ._main import evaluations
 
 
@@ -29,12 +35,12 @@ from cli.evaluations._main import evaluations
     help="The directory where TSBench evaluations are stored.",
 )
 @click.option(
-    "--archive_path",
+    "--experiment",
     type=click.Path(),
-    default=Path.home() / "archive",
-    help="The directory to which to write the compressed files.",
+    required=True,
+    help="The experiment name which you want to visualization.",
 )
-def archive(evaluations_path: str, archive_path: str):
+def result_visualization(evaluations_path: str, experiment: str):
     """
     Archives the metrics of all evaluations found in the provided directory
     into a single file.
@@ -43,15 +49,24 @@ def archive(evaluations_path: str, archive_path: str):
     easier format.
     """
     source = Path(evaluations_path)
-    target = Path(archive_path)
-    target.mkdir(parents=True, exist_ok=True)
+    results_path = Path.joinpath(source, experiment + '.json')
+    abnormal_results_path = Path.joinpath(source, experiment + '-abnormal.json')
 
-    # First, tar all the metadata
-    print("Compressing metrics...")
-    compress_directory(
-        source,
-        target / "metrics.tar.gz",
-        include={"config.json", "performance.json"},
-    )
+    exp_model = 'autogluon'
+    results = json.load(open(results_path, 'r'))
+    res_df = pd.DataFrame(results)
+    metric = 'smape'
+    exp_models = set()
+    for res in results:
+        if exp_model in res['model']:
+            exp_models.add(res['model'])
+    index_models = BASELINES + list(exp_models)
+    print(res_df.pivot_table(index='dataset', columns='model', values=metric).reindex(index_models, axis=1))
 
-# archive()
+    abnormal_results = json.load(open(abnormal_results_path, 'r'))
+    print()
+    print('model \t\t', 'dataset \t\t', 'status')
+    for res in abnormal_results:
+        print(res['model'], ' \t\t', res['dataset'], ' \t\t', res['status'])
+
+result_visualization()
