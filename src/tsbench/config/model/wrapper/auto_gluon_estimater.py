@@ -23,7 +23,6 @@ from gluonts.mx.trainer import Trainer
 from gluonts.transform import Transformation
 
 from .auto_gluon_predictor import AutoGluonPredictor
-
 try:
     from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 except ImportError:
@@ -34,15 +33,7 @@ AUTOGLUON_IS_INSTALLED = TimeSeriesPredictor is not None
 USAGE_MESSAGE = """
 Cannot import `autogluon`.
 
-The `ProphetPredictor` is a thin wrapper for calling the `fbprophet` package.
-In order to use it you need to install it using one of the following two
-methods:
-
-    # 1) install fbprophet directly
-    pip install fbprophet
-
-    # 2) install gluonts with the Prophet extras
-    pip install gluonts[Prophet]
+The `AutoGluonEstimator` is a thin wrapper for calling the `AutoGluon` package.
 """
 
 class AutoGluonEstimator(Estimator):
@@ -82,6 +73,7 @@ class AutoGluonEstimator(Estimator):
         self,
         freq: str,
         prediction_length: int,
+        run_time: int,
         autogluonts_params: Optional[Dict] = None,
         presets: Optional[str] = None,
         hyperparameters: Optional[str] = None,
@@ -105,6 +97,7 @@ class AutoGluonEstimator(Estimator):
         self.autogluonts = TimeSeriesPredictor(prediction_length=prediction_length)
         self.presets = presets
         self.hyperparameters = hyperparameters
+        self.run_time = run_time
 
     def train_model(
         self,
@@ -118,14 +111,10 @@ class AutoGluonEstimator(Estimator):
 
         train_dataframe = TimeSeriesDataFrame(training_data)
         valid_dataframe = TimeSeriesDataFrame(validation_data)
-        # train_dataframe.index.levels[1].freq = self.freq
-        # print(train_dataframe.freq)
-        # train_dataframe.freq = self.freq
 
-        tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=20)
-        # print('autogluon hyperparameter:', self.hyperparameters)
-        # tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, hyperparameters=self.hyperparameters, time_limit=60)
-
+        print('autogluon time limit:', self.run_time, 'preset:', self.presets)
+        tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=self.run_time)
+        
         return AutoGluonPredictor(tspredictor, prediction_length=self.prediction_length, freq=self.freq)
 
         

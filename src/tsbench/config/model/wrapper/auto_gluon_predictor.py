@@ -19,15 +19,7 @@ AUTOGLUON_IS_INSTALLED = TimeSeriesPredictor is not None
 USAGE_MESSAGE = """
 Cannot import `autogluon`.
 
-The `ProphetPredictor` is a thin wrapper for calling the `fbprophet` package.
-In order to use it you need to install it using one of the following two
-methods:
-
-    # 1) install fbprophet directly
-    pip install fbprophet
-
-    # 2) install gluonts with the Prophet extras
-    pip install gluonts[Prophet]
+The `AutoGluonEstimator` is a thin wrapper for calling the `AutoGluon` package.
 """
 
 class AutoGluonPredictor(Predictor):
@@ -38,7 +30,6 @@ class AutoGluonPredictor(Predictor):
         self.freq = freq
         self.predictor = model
     
-    # def predict(self, dataset: Dataset, **kwargs) -> Iterator[Forecast]:
     def predict(
         self,
         dataset: Dataset,
@@ -49,31 +40,19 @@ class AutoGluonPredictor(Predictor):
     ) -> Iterator[QuantileForecast]:
         data_frame = TimeSeriesDataFrame(dataset)
         outputs = self.predictor.predict(data_frame)
-        # ["MASE", "MAPE", "sMAPE", "mean_wQuantileLoss"]
-        try:
-            mase_score = self.predictor.score(data_frame, metric='MASE')
-            mape_score = self.predictor.score(data_frame, metric='MAPE')
-            smape_score = self.predictor.score(data_frame, metric='sMAPE')
-            mean_wquantileloss_score = self.predictor.score(data_frame, metric='mean_wQuantileLoss')
-            print('autogluon MASE', str(mase_score))
-            print('autogluon MAPE', str(mape_score))
-            print('autogluon sMAPE', str(smape_score))
-            print('autogluon mean_wQuantileLoss', str(mean_wquantileloss_score))
-        except:
-            print('an error has been raised when calculate autogluon score')
 
         metas = outputs.index.values
         cancat_len = outputs.shape[0]
         assert cancat_len % self.prediction_length == 0
         ts_num = cancat_len // self.prediction_length
 
-        # TODO resault wraper
+        # resault wraper
         colums = outputs.columns[1:]
         for i in range(ts_num):
-            cur_val = outputs.values[i * self.prediction_length : (i + 1) * self.prediction_length, 1:]
+            cur_val = outputs.values[i * self.prediction_length : (i + 1) * self.prediction_length, 1:].T
             meta = metas[i * self.prediction_length : (i + 1) * self.prediction_length]
             yield QuantileForecast(
-                forecast_arrays=cur_val.T,
+                forecast_arrays=cur_val,
                 start_date=meta[0][1],
                 freq=self.freq,
                 forecast_keys=colums,
