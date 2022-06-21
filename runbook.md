@@ -41,6 +41,17 @@ Default output format [None]: json
 ### docker image build
 the dockrfile is modified by me to install autogluon in docker,
 before build docker, you may need to create a repository in ECR, and set a tag for your image
+
+See line 12 in bin/build-container.sh. Before the colon, it was your ECR repository name. After the colon, is the tag of your image.
+
+for example
+```bash
+docker build \
+    -t $REGISTRY/tsbench-autogluon:jun20localtest \
+    -f Dockerfile .
+```
+*tsbench-autogluon* is the name of you ECR repository and *jun20localtest* is the tag of the image
+
 ```bash
 sh bin/build-container.sh
 ```
@@ -48,6 +59,17 @@ sh bin/build-container.sh
 The install of autogluon on docker is install manually, because use poetry to install the latest version of autogluon with source code will need setup.py, but the autogluon has no setup.py, if want use poetry install it, we may need wait the latest version of autogluon released as wheel package.
 
 When build docker image, it will clone the latest version of autogluon
+
+if you want modify autogluon locally and build docker image with your code, you need to create a thirdparty folder to store the repository of thirdparty, now just autogluon store in there, the docker image will copy the code in thirdparty and install it.
+
+```bash
+cd tsbench
+mkdir thirdparty
+git clone https://github.com/awslabs/autogluon.git thirdparty/autogluon
+cd thirdparty/autogluon
+./full_install.sh
+sh bin/build-container.sh local   # add local parameter will use Dockerfile_local to build image
+```
 
 ### an issue
 when run python scripts blow, you need to add one line on the script which you want to run to invoke the function, when you run other scripts, you must delet the line you added before, otherwise there will be some errors.
