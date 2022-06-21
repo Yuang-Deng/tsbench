@@ -14,6 +14,8 @@
 import os
 import tarfile
 import tempfile
+from matplotlib.pyplot import axis
+import pandas as pd
 from functools import partial
 from pathlib import Path
 from typing import Any, cast, Dict, List, Optional
@@ -29,6 +31,14 @@ from tsbench.evaluations.aws import default_session, TrainingJob
 from tsbench.evaluations.tracking.job import Job, load_jobs_from_analysis
 from cli.evaluations._main import evaluations
 # from ._main import evaluations
+
+BASELINES = ["arima", "ets", "prophet"]
+
+METRICS = ["mase", "smape", "nrmse", "nd", "ncrps"]
+
+DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly", "m4_monthly", 
+    "m4_weekly", "m4_daily", "m4_hourly", "m4_yearly", "tourism_quarterly", "tourism_monthly", 
+    "dominick", "weather", "hospital", "covid_deaths",]
 
 
 @evaluations.command(short_help="Download evaluations to your file system.")
@@ -84,7 +94,6 @@ def download(
         other_jobs = []
     else:
         print(f"Downloading data from experiment '{experiment}'...")
-        target = Path.joinpath(target, experiment)
         analysis = aws.Analysis(experiment, status_list=['Completed, Failed'])
         jobs = load_jobs_from_analysis(analysis)
         other_jobs = analysis.other_jobs
@@ -99,42 +108,59 @@ def download(
         # )
     if format:
         _format(target, experiment=experiment, other_jobs=other_jobs)
-    
 
 def _format(source: Path, experiment: Optional[str], other_jobs: List[TrainingJob] = None):
-    res_json = {}
+    results = []
+    autogluon_models = set()
     models = os.listdir(source)
     for model in models:
-        model_json = {}
         model_dir = Path.joinpath(source, model)
         datasets = os.listdir(model_dir)
         for ds in datasets:
-            ds_json = {}
-            ds_dir = Path.joinpath(model_dir, ds)
-            hyperparameters = os.listdir(ds_dir)
-            for hp in hyperparameters:
-                hp_json = {}
-                hp_dir = Path.joinpath(ds_dir, hp)
-                config = json.load(open(Path.joinpath(hp_dir, 'config.json'), 'r'))
-                performance = json.load(open(Path.joinpath(hp_dir, 'performance.json'), 'r'))
-                hp_json['config'] = config
-                hp_json['performance'] = performance
-                ds_json[hp] = hp_json
-            model_json[ds] = ds_json
-        res_json[model] = model_json
+            # TODO collect dataset we need, try collect all dataset but just print we need
+            if ds in DATASETS:
+                ds_dir = Path.joinpath(model_dir, ds)
+                hyperparameters = os.listdir(ds_dir)
+                for hp in hyperparameters:
+                    hp_dir = Path.joinpath(ds_dir, hp)
+                    config = json.load(open(Path.joinpath(hp_dir, 'config.json'), 'r'))
+                    performance = json.load(open(Path.joinpath(hp_dir, 'performance.json'), 'r'))
+                    n = len(performance['performances'])
+                    res = {}
+                    if model == 'autogluon':
+                        autogluom_model = model + '-' + config['hyperparameters']['presets']
+                        autogluon_models.add(autogluom_model)
+                        res['model'] = autogluom_model
+                    else:
+                        res['model'] = model
+                    res['dataset'] = ds
+                    res.update(performance['performances'][-1]['testing'])
+                    val_loss = performance['performances'][n-1]['evaluation']['val_loss'] if 'evaluation' in performance['performances'][n-1] else -1
+                    res['val_loss'] = val_loss
+                    res['seed'] = config['seed']
+                    res['hps'] = hp
+                    results.append(res)
+    
+    res_df = pd.DataFrame(results)
+    metric = 'smape'
+    index_models = BASELINES + list(autogluon_models)
+    print(res_df.pivot_table(index='dataset', columns='model', values=metric).reindex(index_models, axis=1))
 
-    other_jobs_json = {}
+    abnormal_results = []
     if len(other_jobs) > 0:
         for job in other_jobs:
-            other_jobs_json[job.name] = job.hyperparameters
-            other_jobs_json[job.name]['status'] = job.status
-
+            res = {}
+            res.update(job.hyperparameters)
+            res['status'] = job.status
+            abnormal_results.append(res)
+    print(json.dumps(abnormal_results, indent=2))
+    
     if experiment is None:
-        json.dump(res_json, open(Path.joinpath(source, 'tsbench.json'), 'w+'))
+        json.dump(results, open(Path.joinpath(source, 'tsbench.json'), 'w+'), indent=2)
     else:
-        json.dump(res_json, open(Path.joinpath(source, experiment + '.json'), 'w+'))
+        json.dump(results, open(Path.joinpath(source, experiment + '.json'), 'w+'), indent=2)
         print('results of complemented experiments is saved in', Path.joinpath(source, experiment + '.json'))
-        json.dump(other_jobs_json, open(Path.joinpath(source, experiment + '-others.json'), 'w+'))
+        json.dump(abnormal_results, open(Path.joinpath(source, experiment + '-others.json'), 'w+'), indent=2)
         print('results of others experiments is saved in', Path.joinpath(source, experiment + '-others.json'))
 
     
