@@ -26,7 +26,7 @@ from cli.evaluations.download import BASELINES, METRICS, DATASETS
 
 
 @evaluations.command(
-    short_help="Archive metrics of all evaluations into a single file."
+    short_help="Visulize results as a table."
 )
 @click.option(
     "--evaluations_path",
@@ -55,6 +55,12 @@ def result_visualization(evaluations_path: str, experiment: str):
     exp_model = 'autogluon'
     results = json.load(open(results_path, 'r'))
     res_df = pd.DataFrame(results)
+
+    # hpo_df = res_df[~res_df['val_loss'].isna()]
+    # simple_df = res_df[res_df['val_loss'].isna()]
+    res_df = res_df.loc[res_df.groupby(['dataset', 'model', 'seed']).val_loss.idxmin()]
+    # res_df = pd.concat([simple_df, hpo_best_df])
+
     metric = 'smape'
     exp_models = set()
     for res in results:
@@ -69,4 +75,4 @@ def result_visualization(evaluations_path: str, experiment: str):
     for res in abnormal_results:
         print(res['model'], ' \t\t', res['dataset'], ' \t\t', res['status'])
 
-result_visualization()
+# result_visualization()

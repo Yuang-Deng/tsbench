@@ -5,6 +5,8 @@ from typing import Callable, Dict, Iterator, List, NamedTuple, Optional
 import numpy as np
 import pandas as pd
 import toolz
+import os
+from pathlib import Path
 
 from mxnet.gluon import HybridBlock
 
@@ -22,11 +24,14 @@ from gluonts.model.predictor import Predictor
 from gluonts.mx.trainer import Trainer
 from gluonts.transform import Transformation
 
+from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
+
+
 from .auto_gluon_predictor import AutoGluonPredictor
-try:
-    from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
-except ImportError:
-    TimeSeriesPredictor = None
+# try:
+#     from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
+# except ImportError:
+#     TimeSeriesPredictor = None
 
 AUTOGLUON_IS_INSTALLED = TimeSeriesPredictor is not None
 
@@ -114,6 +119,10 @@ class AutoGluonEstimator(Estimator):
 
         print('autogluon time limit:', self.run_time, 'preset:', self.presets)
         tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=self.run_time)
+        # it is not needed, we can get the score_val when predict
+        # model_path = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
+        # leaderboard = self.autogluonts.leaderboard()
+        # leaderboard.to_csv(Path.joinpath(Path(model_path), 'train_leaderboard.csv'))
         
         return AutoGluonPredictor(tspredictor, prediction_length=self.prediction_length, freq=self.freq)
 

@@ -38,8 +38,7 @@ METRICS = ["mase", "smape", "nrmse", "nd", "ncrps"]
 
 DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly", "m4_monthly", 
     "m4_weekly", "m4_daily", "m4_hourly", "m4_yearly", "tourism_quarterly", "tourism_monthly", 
-    "dominick", "weather", "hospital", "covid_deaths",]
-
+    "dominick", "weather", "hospital", "covid_deaths", "electricity", "kdd_2018", "nn5", "rossmann", "solar", "taxi", "wiki"]
 
 @evaluations.command(short_help="Download evaluations to your file system.")
 @click.option(
@@ -62,6 +61,14 @@ DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly
     ),
 )
 @click.option(
+    "--include_leaderboard",
+    type=bool,
+    default=False,
+    help=(
+        "Whether to download leaderboard"
+    ),
+)
+@click.option(
     "--evaluations_path",
     type=click.Path(),
     default=DEFAULT_EVALUATIONS_PATH,
@@ -74,8 +81,14 @@ DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly
     default=False,
     help="Whether to organize the results.",
 )
+@click.option(
+    "--metric",
+    type=str,
+    default='mase',
+    help="Whether to organize the results.",
+)
 def download(
-    experiment: Optional[str], include_forecasts: bool, evaluations_path: str, format: bool
+    experiment: Optional[str], include_forecasts: bool, include_leaderboard: bool, evaluations_path: str, format: bool, metric: str
 ):
     """
     Downloads either the evaluations of a single AWS Sagemaker experiment or
@@ -84,6 +97,7 @@ def download(
     The evaluations are downloaded to the provided directory.
     """
     target = Path(evaluations_path)
+    target = Path.joinpath(target, experiment)
     target.mkdir(parents=True, exist_ok=True)
 
     if experiment is None:
@@ -98,7 +112,7 @@ def download(
         jobs = load_jobs_from_analysis(analysis)
         other_jobs = analysis.other_jobs
         for job in jobs:
-            _move_job(job, target=target, include_forecasts=include_forecasts)
+            _move_job(job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
         # process_map(
         #     partial(
         #         _move_job, target=target, include_forecasts=include_forecasts
@@ -107,12 +121,13 @@ def download(
         #     chunksize=1,
         # )
     if format:
-        _format(target, experiment=experiment, other_jobs=other_jobs)
+        _format(target, metric=metric, experiment=experiment, other_jobs=other_jobs)
 
-def _format(source: Path, experiment: Optional[str], other_jobs: List[TrainingJob] = None):
+def _format(source: Path, experiment: Optional[str], metric:str , other_jobs: List[TrainingJob] = None):
     results = []
     autogluon_models = set()
     models = os.listdir(source)
+    #norm results
     for model in models:
         model_dir = Path.joinpath(source, model)
         if Path.is_file(model_dir):
@@ -130,7 +145,8 @@ def _format(source: Path, experiment: Optional[str], other_jobs: List[TrainingJo
                     n = len(performance['performances'])
                     res = {}
                     if model == 'autogluon':
-                        autogluom_model = model + '-' + config['hyperparameters']['presets']
+                        # leaderboard = pd.read_csv(Path.joinpath(hp_dir, 'leaderboard.csv'))
+                        autogluom_model = model + '-' + config['hyperparameters']['presets'] + '-' + str(config['hyperparameters']['run_time'])
                         autogluon_models.add(autogluom_model)
                         res['model'] = autogluom_model
                     else:
@@ -144,10 +160,11 @@ def _format(source: Path, experiment: Optional[str], other_jobs: List[TrainingJo
                     results.append(res)
     
     res_df = pd.DataFrame(results)
-    metric = 'smape'
+    res_df = res_df.loc[res_df.groupby(['dataset', 'model', 'seed']).val_loss.idxmin()]
     index_models = BASELINES + list(autogluon_models)
     print(res_df.pivot_table(index='dataset', columns='model', values=metric).reindex(index_models, axis=1))
 
+    # abnormal results
     abnormal_results = []
     if len(other_jobs) > 0:
         for job in other_jobs:
@@ -156,6 +173,8 @@ def _format(source: Path, experiment: Optional[str], other_jobs: List[TrainingJo
             res['status'] = job.status
             abnormal_results.append(res)
             print(res['model'], ' \t', res['dataset'], ' \t', res['status'])
+
+    # TODO leader_board
     
     if experiment is None:
         json.dump(results, open(Path.joinpath(source, 'tsbench.json'), 'w+'), indent=2)
@@ -234,7 +253,7 @@ def _extract_object_names(response: Dict[str, Any]) -> List[str]:
     ]
 
 
-def _move_job(job: Job, target: Path, include_forecasts: bool):
-    job.save(target, include_forecasts=include_forecasts)
+def _move_job(job: Job, target: Path, include_forecasts: bool, include_leaderboard: bool):
+    job.save(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
 
 # download()

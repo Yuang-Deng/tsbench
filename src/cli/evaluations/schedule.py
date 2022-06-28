@@ -11,6 +11,7 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
+import json
 import os
 import time
 from datetime import datetime, timezone
@@ -170,11 +171,17 @@ def schedule(
     all_configurations = generate_configurations(Path(config_path))
 
     # Then, we can run the training, passing parameters as required
+    job_index = 0
+    job_list = []
+    source_bucket_prefix = "source"
     for configuration in iterate_configurations(all_configurations, nskip):
         # Create the estimator
         estimator = CustomFramework(
             sagemaker_session=sm_session,
             role=sagemaker_role,
+            code_location=(
+                f"s3://{output_bucket}/{source_bucket_prefix}/{experiment}"
+            ),
             tags=[
                 {"Key": "Experiment", "Value": experiment},
             ],
@@ -220,11 +227,14 @@ def schedule(
                     },
                     wait=False,
                 )
+                job_index += 1
+                job_list.append({"job_name": estimator.latest_training_job.name, "config": configuration})
                 break
             except ClientError as err:
                 print(f"+++ Scheduling failed: {err}")
                 print("+++ Sleeping for 5 minutes.")
                 time.sleep(300)
+        json.dump({"job_index": job_index, "job_list": job_list}, open("temp_config.json", 'w+'))
 
         print(f">>> Launched job: {estimator.latest_training_job.name}")  # type: ignore
 

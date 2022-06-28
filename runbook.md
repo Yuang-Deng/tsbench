@@ -1,127 +1,115 @@
 # clone repository and conda 
 ```bash
 git clone https://github.com/Yuang-Deng/tsbench.git
-wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh
+git checkout autogluon_dev
 ```
 
 # install on EC2
+## enviroment set
 ```bash
-sh Anaconda3-2022.05-Linux-x86_64.sh 
-conda create -n tsbench python=3.8
-conda activate tsbench
-sudo apt-get update # this is necessary after jun17, maybe the server has change ip? If no this command, an error "E: Failed to fetch http://us-west-2.ec2.archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-libc-dev_5.4.0-109.123_amd64.deb  404  Not Found [IP: 34.212.136.213 80]" will be raised
+bash bin/setup-ec2.sh  #must bash, if use sh, an error will be encountered
+source $HOME/.poetry/env
 
-# sudo apt-get install gcc # this will be unnecessary after sudo apt-get update
-
-cd tsbench 
-git checkout autogluon_dev  # the latest version of code is in branch autogluon_dev
-pip install poetry
 poetry install
+poetry shell
+```
+When you need use tsbench cmd to run program, you need use source $HOME/.poetry/env to activate the virtual enviroment, and poetry shell to make cmd of tsbench available
+### issue
+You may encounter some errors during poetry install, you can see the log in terminal and install the package manually which not installed successful.
 
-# this will be not necessary, please install the packages which can not successfully installed by poetry
-pip install sagemaker
-...
+After all packages are successfully installed, you can see this line in terminal
+```bash
+Installing the current project: tsbench (1.0.0)
 ```
 
+## config AWS CLI
+Before run schedule, we must config the aws cli.
 
-
-## run schedule to launch job in sagemaker
-### AWS CLI config
-before run schedule, we must config the aws cli.
-
-In aws configure, only region is needed, they others can be left empty.
+<!-- In aws configure, only region is needed, they others can be left empty. -->
 ```bash
-sudo apt install awscli
-aws configure
+aws configure 
 AWS Access Key ID [None]: your id
 AWS Secret Access Key [None]: your key
 Default region name [None]: us-west-2
 Default output format [None]: json
 ```
-### docker image build
-the dockrfile is modified by me to install autogluon in docker,
-before build docker, you may need to create a repository in ECR, and set a tag for your image
 
-See line 12 in bin/build-container.sh. Before the colon, it was your ECR repository name. After the colon, is the tag of your image.
+## config kaggle
+use your kaggle account
 
-for example
+## download datasets
+
+```bash
+tsbench datasets download \
+    --path=/home/ubuntu/data/datasets \ # the path you want to store the datasets.
+    --dataset=tourism_quarterly \ # specific a dataset which you want to download, if not specific, all datasets will be downloaded.
+```
+
+if you do not config the kaggle account, some dataset will not be download, but we can use the dataset 
+
+if "Command 'tsbench' not found", use poetry shell to activate the virtual enviroment
+
+## upload dataset
+upload the datasets to s3 bucket
+```bash
+tsbench datasets upload \
+    --bucket=yuangbucket \ # your s3 bucket
+    --path=/home/ubuntu/data/datasets \ # The path of the datasets you downloaded
+    --prefix=datatest \ # the path you want to upload to in s3 bucket
+```
+
+## build docker and upload to ECR
+Since autogluon is still under development, here are two ways to build docker images.
+
+Before run script to build docker image, you need to create a ECR repository, The name of the repository must be the same as the tag of docker you build
+
+for instance
 ```bash
 docker build \
-    -t $REGISTRY/tsbench-autogluon:jun20localtest \
-    -f Dockerfile .
+    -t $REGISTRY/tsbench-autogluon:jun22 \
+    -f $DOCKERFILE_PATH . 
 ```
-*tsbench-autogluon* is the name of you ECR repository and *jun20localtest* is the tag of the image
+tsbench-autogluon is the name of the ECR repository and jun22 is the tag of this image. This can be set in bin/build-container.sh
 
+### build docker image with local code
+You need to create a folder named as thirdparty, download the repository which you need in this folder, and modify the Dockerfile_local to install it on docker image
+```bash
+sh bin/build-container.sh local
+```
+
+### build docker image with remote code
+You can modify the Dockerfile to clone git repository and install it on docker image
 ```bash
 sh bin/build-container.sh
 ```
 
-The install of autogluon on docker is install manually, because use poetry to install the latest version of autogluon with source code will need setup.py, but the autogluon has no setup.py, if want use poetry install it, we may need wait the latest version of autogluon released as wheel package.
-
-When build docker image, it will clone the latest version of autogluon
-
-if you want modify autogluon locally and build docker image with your code, you need to create a thirdparty folder to store the repository of thirdparty, now just autogluon store in there, the docker image will copy the code in thirdparty and install it.
-
+## launch sagemaker job
 ```bash
-cd tsbench
-mkdir thirdparty
-git clone https://github.com/awslabs/autogluon.git thirdparty/autogluon
-cd thirdparty/autogluon
-./full_install.sh
-sh bin/build-container.sh local   # add local parameter will use Dockerfile_local to build image
-```
-
-### an issue
-when run python scripts blow, you need to add one line on the script which you want to run to invoke the function, when you run other scripts, you must delet the line you added before, otherwise there will be some errors.
-
-### run
-```bash
-python ./src/cli/evaluations/schedule.py \
-    --config_path=./configs/benchmark/auto/autogluon.yaml \
-    --sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759 \
-    --experiment=tsbench-autogluon-runbook-test \
-    --data_bucket=yuangbucket/tsbench \
-    --data_bucket_prefix=data \
-    --output_bucket=yuangbucket/tsbench \
-    --output_bucket_prefix=evaluations \
-    --docker_image=tsbench-autogluon:jun17 \
+tsbench evaluations schedule \
+    --config_path=./configs/benchmark/auto/autogluon.yaml \ # the config file you want to run
+    --sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759 \ # your sagemaker role
+    --experiment=tsbench-autogluon-runbook-test \ # the name of experiment
+    --data_bucket=yuangbucket \ # your s3 bucket name
+    --data_bucket_prefix=datatest \ # the path of datasets in your s3 bucket
+    --output_bucket=yuangbucket \ # your s3 bucket name
+    --output_bucket_prefix=evaluations \ # the path of the results you want to store in your s3 bucket
+    --docker_image=tsbench-autogluon:jun17 \ # the docker repository and tag you build before
     --max_runtime=120 \
 ```
 
-## run evaluate to debug locally with single dataset
-### dataset download
-before run evaluate locally, the dataset must downloaded and save at /home/ubuntu/data/datasets
-the datasets is upload to my s3 bucket, s3://yuangbucket/tsbench/data/
-### use latest version of autogluon
-I will try to install latest version from source code use poetry, but now, we need install the latest version manually.
+## collect the results of sagemaker job
 ```bash
-git clone https://github.com/awslabs/autogluon.git
-./full_install.sh
-```
-### run
-```bash
-python ./src/evaluate.py \
-    --dataset=m4_hourly \
-    --model=autogluon \
+tsbench evaluations download \
+    --experiment=tsbench-autogluon-runbook-test \ # the experiment name you want to download
+    --include_forecasts=False \ 
+    --include_leaderboard=False \ # download leaderboard to dictory, it only valid when model is autogluon
+    --format=True \ # whether to visualize the results as a table
 ```
 
-## run locally
-create a folder to clone autogluon code and install it.
-```bash
-cd tsbench
-mkdir thirdparty
-git clone https://github.com/awslabs/autogluon.git thirdparty/autogluon
-cd thirdparty/autogluon
-./full_install.sh
-```
-run
-```bash
-python ./src/evaluate.py \
-    --dataset=m1_yearly \
-    --model=autogluon \
-```
 
-## if use vscode, this is my launch.json
+# for developer
+this is my launch.json
+
 ```python
 {
     // Use IntelliSense to learn about possible attributes.
@@ -129,6 +117,7 @@ python ./src/evaluate.py \
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
             "name": "Python: schedule",
             "type": "python",
@@ -137,14 +126,34 @@ python ./src/evaluate.py \
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                "--config_path=./configs/benchmark/auto/autogluon.yaml",
+                "--config_path=./configs/benchmark/auto/tsbench_seed.yaml",
                 "--sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759",
-                "--experiment=tsbench-rerun-dataset",
+                "--experiment=tsbench-random-seed-exp3",
                 "--data_bucket=yuangbucket/tsbench",
                 "--data_bucket_prefix=data",
                 "--output_bucket=yuangbucket/tsbench",
                 "--output_bucket_prefix=evaluations",
-                "--docker_image=tsbench-autogluon:jun17",
+                "--docker_image=tsbench-autogluon:jun23_1",
+                "--max_runtime=120",
+                "--nskip=1"
+            ]
+        },
+        {
+            "name": "Python: schedule test",
+            "type": "python",
+            "request": "launch",
+            "program": "./src/cli/evaluations/schedule.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--config_path=./configs/benchmark/auto/autogluon_test.yaml",
+                "--sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759",
+                "--experiment=tsbench-codelocation-test",
+                "--data_bucket=yuangbucket/tsbench",
+                "--data_bucket_prefix=data",
+                "--output_bucket=yuangbucket/tsbench",
+                "--output_bucket_prefix=evaluations",
+                "--docker_image=tsbench-autogluon:jun22",
                 "--max_runtime=120"
             ]
         },
@@ -156,8 +165,11 @@ python ./src/evaluate.py \
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                "--dataset=m1_yearly",
-                "--model=autogluon"
+                "--dataset=solar",
+                // "--dataset=hospital",
+                "--model=autogluon",
+                "--autogluon_presets=good_quality",
+                "--autogluon_run_time=60"
             ]
         },
         {
@@ -168,8 +180,10 @@ python ./src/evaluate.py \
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                "--experiment=tsbench-weekend-exp",
+                "--experiment=tsbench-random-seed-exp3",
+                // "--experiment=tsbench-leaderboard-test",
                 "--include_forecasts=False",
+                "--include_leaderboard=False",
                 "--format=True",
             ]
         },
@@ -183,41 +197,18 @@ python ./src/evaluate.py \
             "args": [
                 "--experiment=tsbench-weekend-exp",
             ]
-        }
+        },
+        {
+            "name": "Python: dataset download",
+            "type": "python",
+            "request": "launch",
+            "program": "./src/cli/datasets/download_s3.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                // "--bucket=yuangbucket/tsbench",
+            ]
+        },
     ]
 }
-```
-
-## some issue with error raised with failed poetry install
-after run poetry install, use pip list to check if the tsbench is installed 
-if tsbench is not installed, but run evaluate and schedule need tsbench, we can delete the line after line 10, and use poetry install
-
-
-# collect tsbench result
-the tsbench result collect script is collect result by the experiment name of sagemaker job, the experiment name is a parameter of schedule, an experiment will run multiple different configurat, it correspond to multiple job on sagemaker, this job will have the same experiment name but with different suffix, this script will collect result by experiment name, ignore the suffix.
-
-```bash
-python ./src/cli/evaluations/download.py \
-    --experiment=tsbench-weekend-exp \
-    --include_forecasts=False \
-    --format=True \
-```
-
-if format=True, the results will be print as a table in terminal, the abnormal results will be print as json in terminal, all results will be store as json file.
-
-if the results are stored as json file, the result_visualization can be used to visualiza the results again.
-
-```bash
-python ./src/cli/evaluations/result_visualization.py \
-    --experiment=tsbench-weekend-exp 
-```
-
-# modify autogluon locally and build docker image
-create a thirdparty folder to store the repository of thirdparty, now just autogluon, the docker image can be build successfully
-```bash
-cd tsbench
-mkdir thirdparty
-git clone https://github.com/awslabs/autogluon.git thirdparty/autogluon
-cd thirdparty/autogluon
-./full_install.sh
 ```

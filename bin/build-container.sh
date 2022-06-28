@@ -18,12 +18,12 @@ fi
 
 echo "Building image..."
 docker build \
-    -t $REGISTRY/tsbench-autogluon:jun20localtest \
-    -f $DOCKERFILE_PATH .
+    -t $REGISTRY/tsbench-autogluon:jun23_1 \
+    -f $DOCKERFILE_PATH . 
 
 echo "Logging in to ECR..."
 echo $ECR_PASSWORD | \
     docker login --username AWS --password-stdin $REGISTRY
 
 echo "Pushing image..."
-docker push $REGISTRY/tsbench-autogluon:jun20localtest
+docker push $REGISTRY/tsbench-autogluon:jun23_1

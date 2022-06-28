@@ -206,7 +206,7 @@ class MQCnnModelConfig(ModelConfig, TrainConfig):
     ) -> Predictor:
         mqcnn_estimator = cast(MQCNNEstimator, estimator)
         transform = mqcnn_estimator.create_transformation()
-        return mqcnn_estimator.create_predictor(transform, cast)  # type: ignore
+        return mqcnn_estimator.create_predictor(transform, network)  # type: ignore
 
     def create_estimator(
         self,

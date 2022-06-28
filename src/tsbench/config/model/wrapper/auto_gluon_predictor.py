@@ -1,9 +1,9 @@
 import logging
-from tkinter.messagebox import NO
 from typing import Iterator, Optional
 
 import json
 from pathlib import Path
+import os
 
 from gluonts.dataset.common import Dataset
 from gluonts.model.predictor import Predictor
@@ -40,6 +40,11 @@ class AutoGluonPredictor(Predictor):
     ) -> Iterator[QuantileForecast]:
         data_frame = TimeSeriesDataFrame(dataset)
         outputs = self.predictor.predict(data_frame)
+
+        model_path = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
+        leaderboard = self.predictor.leaderboard(data_frame)
+        leaderboard.to_csv(Path.joinpath(Path(model_path), 'leaderboard.csv'))
+        print('leaderboard has been saved at:', Path.joinpath(Path(model_path), 'leaderboard.csv'))
 
         metas = outputs.index.values
         cancat_len = outputs.shape[0]
