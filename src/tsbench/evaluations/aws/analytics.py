@@ -119,31 +119,47 @@ class TrainingJob:
         log_file = self._cache_dir() / "logs.txt"
         if log_file.exists():
             with log_file.open("r") as f:
-                return f.read().split("\n")
+                logs = f.read().split("\n")
+                # if logs are completed, return them
+                if "Reporting training SUCCESS" in logs[-1]:
+                    return logs
+                # return logs
+                
 
         # If not, fetch them
-        client = default_session().client("logs")
-        streams = client.describe_log_streams(
-            logGroupName="/aws/sagemaker/TrainingJobs",
-            logStreamNamePrefix=self.info["TrainingJobName"],
-        )
-        res = []
-        for stream in streams["logStreams"]:
-            params = {
-                "logGroupName": "/aws/sagemaker/TrainingJobs",
-                "logStreamName": stream["logStreamName"],
-                "startFromHead": True,
-            }
-            result = client.get_log_events(**params)
-            res.extend([event["message"] for event in result["events"]])
-            while "nextForwardToken" in result:
-                next_token = result["nextForwardToken"]
-                result = client.get_log_events(nextToken=next_token, **params)
-                if result["nextForwardToken"] == next_token:
-                    # The same token as before indicates end of stream, see
-                    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/logs.html#CloudWatchLogs.Client.get_log_events
-                    break
+        complete = False
+        retry = 1
+        while not complete:
+            client = default_session().client("logs")
+            streams = client.describe_log_streams(
+                logGroupName="/aws/sagemaker/TrainingJobs",
+                logStreamNamePrefix=self.info["TrainingJobName"],
+            )
+            res = []
+            for stream in streams["logStreams"]:
+                params = {
+                    "logGroupName": "/aws/sagemaker/TrainingJobs",
+                    "logStreamName": stream["logStreamName"],
+                    "startFromHead": True,
+                }
+                result = client.get_log_events(**params)
                 res.extend([event["message"] for event in result["events"]])
+                while "nextForwardToken" in result:
+                    next_token = result["nextForwardToken"]
+                    result = client.get_log_events(nextToken=next_token, **params)
+                    if result["nextForwardToken"] == next_token:
+                        # The same token as before indicates end of stream, see
+                        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/logs.html#CloudWatchLogs.Client.get_log_events
+                        break
+                    res.extend([event["message"] for event in result["events"]])
+            if "Reporting training SUCCESS" not in res[-1]:
+                logging.warning(
+                    "%dth retry, log download failed, sleep %d seconds and retry",
+                    retry, 60,
+                )
+                time.sleep(60)
+            else:
+                complete = True
 
         # Store them
         log_file.parent.mkdir(parents=True, exist_ok=True)
@@ -430,6 +446,10 @@ def _fetch_training_jobs(
             c = Counter([j.status for j in jobs])
             d = dict(c)
             del d["Completed"]
+            logging.warning(
+                " completed %d jobs",
+                len(completed_jobs),
+            )
             logging.warning(
                 " Analysis is ignoring %d jobs %s",
                 len(jobs) - len(completed_jobs),

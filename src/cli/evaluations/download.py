@@ -14,7 +14,6 @@
 import os
 import tarfile
 import tempfile
-from matplotlib.pyplot import axis
 import pandas as pd
 from functools import partial
 from pathlib import Path
@@ -32,7 +31,7 @@ from tsbench.evaluations.tracking.job import Job, load_jobs_from_analysis
 from cli.evaluations._main import evaluations
 # from ._main import evaluations
 
-BASELINES = ["arima", "ets", "prophet"]
+BASELINES = ["arima", "ets", "prophet", "mqcnn"]
 
 METRICS = ["mase", "smape", "nrmse", "nd", "ncrps"]
 
