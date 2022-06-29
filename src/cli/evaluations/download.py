@@ -108,17 +108,15 @@ def download(
     else:
         print(f"Downloading data from experiment '{experiment}'...")
         analysis = aws.Analysis(experiment, status_list=['Completed, Failed'])
-        jobs = load_jobs_from_analysis(analysis)
         other_jobs = analysis.other_jobs
-        for job in jobs:
-            _move_job(job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
-        # process_map(
-        #     partial(
-        #         _move_job, target=target, include_forecasts=include_forecasts
-        #     ),
-        #     load_jobs_from_analysis(analysis),
-        #     chunksize=1,
-        # )
+        process_map(
+            partial(
+                _move_job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_forecasts
+            ),
+            load_jobs_from_analysis(analysis),
+            chunksize=1,
+        )
+
     if format:
         _format(target, metric=metric, experiment=experiment, other_jobs=other_jobs)
 
@@ -253,6 +251,12 @@ def _extract_object_names(response: Dict[str, Any]) -> List[str]:
 
 
 def _move_job(job: Job, target: Path, include_forecasts: bool, include_leaderboard: bool):
+    # print('move_job')
     job.save(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
+
+def _foo(my_number):
+   square = my_number * my_number
+   print(my_number)
+   return square 
 
 # download()
