@@ -79,6 +79,7 @@ class AutoGluonEstimator(Estimator):
         freq: str,
         prediction_length: int,
         run_time: int,
+        eval_metric: str,
         autogluonts_params: Optional[Dict] = None,
         presets: Optional[str] = None,
         hyperparameters: Optional[str] = None,
@@ -99,7 +100,7 @@ class AutoGluonEstimator(Estimator):
         self.freq = freq
         self.prediction_length = prediction_length
         self.autogluonts_params = autogluonts_params
-        self.autogluonts = TimeSeriesPredictor(prediction_length=prediction_length)
+        self.autogluonts = TimeSeriesPredictor(prediction_length=prediction_length, eval_metric=eval_metric)
         self.presets = presets
         self.hyperparameters = hyperparameters
         self.run_time = run_time
@@ -117,7 +118,7 @@ class AutoGluonEstimator(Estimator):
         train_dataframe = TimeSeriesDataFrame(training_data)
         valid_dataframe = TimeSeriesDataFrame(validation_data)
 
-        print('autogluon time limit:', self.run_time, 'preset:', self.presets)
+        # print('autogluon time limit:', self.run_time, 'preset:', self.presets)
         tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=self.run_time)
         # self.autogluonts.leaderboard()
         # it is not needed, we can get the score_val when predict

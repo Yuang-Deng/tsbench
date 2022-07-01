@@ -38,6 +38,7 @@ sourcedir.tar.gz
 model.tar.gz
 train_leaderboard.csv
 configs/benchmark/auto/autogluon_test.yaml
+configs/benchmark/auto/tsbench_seed.yaml
 m5
 
 
