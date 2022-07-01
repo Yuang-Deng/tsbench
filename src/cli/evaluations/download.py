@@ -161,6 +161,8 @@ def _format(source: Path, experiment: Optional[str], metric:str , other_jobs: Li
                     results.append(res)
     
     res_df = pd.DataFrame(results)
+    res_df.to_csv(Path.joinpath(source, experiment + '.csv'))
+    print('results has been saved at:', Path.joinpath(source, experiment + '.csv'))
     res_df = res_df.loc[res_df.groupby(['dataset', 'model', 'seed']).val_loss.idxmin()]
     index_models = BASELINES + list(autogluon_models)
     print(res_df.pivot_table(index='dataset', columns='model', values=metric).reindex(index_models, axis=1))
@@ -258,4 +260,4 @@ def _move_job(job: Job, target: Path, include_forecasts: bool, include_leaderboa
     # print('move_job')
     job.save(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
 
-# download()
+download()
