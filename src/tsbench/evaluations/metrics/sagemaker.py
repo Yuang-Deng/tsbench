@@ -35,8 +35,28 @@ def metric_definitions() -> List[Dict[str, str]]:
             "Regex": f"'validation_epoch_loss'={_FLOATING_POINT_REGEX}",
         },
         {
-            "Name": "val_ncprs",
-            "Regex": _metric_regex("val_ncprs"),
+            "Name": "val_ncrps",
+            "Regex": _metric_regex("val_ncrps"),
+        },
+        {
+            "Name": "val_nd",
+            "Regex": _metric_regex("val_nd"),
+        },
+        {
+            "Name": "val_nrmse",
+            "Regex": _metric_regex("val_nrmse"),
+        },
+        {
+            "Name": "val_mase",
+            "Regex": _metric_regex("val_mase"),
+        },
+        {
+            "Name": "val_smape",
+            "Regex": _metric_regex("val_smape"),
+        },
+        {
+            "Name": "val_latency",
+            "Regex": _metric_regex("val_latency"),
         },
     ]
     custimze_metrics = [

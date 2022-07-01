@@ -102,10 +102,15 @@ class FitResult:
                 log_metric("latency", latency)
                 cur_res["latency"] = float(latency)
             else:
-                log_metric(
-                    "val_ncprs",
-                    evaluation.summary["ncrps"],
-                )
+                # log_metric(
+                #     "val_ncrps",
+                #     evaluation.summary["ncrps"],
+                # )
+                for metric, value in evaluation.summary.items():
+                    log_metric("val_" + metric, value)
+                    cur_res["val_" + metric] = float(value)
+                log_metric("val_latency", latency)
+                cur_res["val_latency"] = float(latency)
             res.append({f"model_{i}" : cur_res})
             json.dump(res, open(res_path, 'w'))
             logging.info('res.json is saved in %s', res_path)

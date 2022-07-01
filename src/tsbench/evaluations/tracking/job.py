@@ -273,7 +273,12 @@ def load_jobs_from_analysis(analysis: Analysis) -> list[Job]:
         This function might take a long time if job logs are not cached. They are downloaded
         sequentially.
     """
-    return [Job.from_training_job(job) for job in analysis]
+    jobs = []
+    for job in analysis:
+        print(job)
+        jobs.append(Job.from_training_job(job))
+    return jobs
+    # return [Job.from_training_job(job) for job in analysis]
 
 
 def load_jobs_from_directory(directory: Path) -> list[Job]:
@@ -324,6 +329,10 @@ def _extract_performance(job: TrainingJob) -> dict[str, Any]:
             "val_loss",
             "val_mean_weighted_quantile_loss",
             "val_ncrps",
+            "val_mase",
+            "val_smape",
+            "val_nrmse",
+            "val_nd",
         ],
         "testing": [
             "mase",

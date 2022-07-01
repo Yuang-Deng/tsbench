@@ -119,6 +119,7 @@ class AutoGluonEstimator(Estimator):
 
         print('autogluon time limit:', self.run_time, 'preset:', self.presets)
         tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=self.run_time)
+        # self.autogluonts.leaderboard()
         # it is not needed, we can get the score_val when predict
         # model_path = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
         # leaderboard = self.autogluonts.leaderboard()

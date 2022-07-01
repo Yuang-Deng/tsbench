@@ -109,13 +109,16 @@ def download(
         print(f"Downloading data from experiment '{experiment}'...")
         analysis = aws.Analysis(experiment, status_list=['Completed, Failed'])
         other_jobs = analysis.other_jobs
-        process_map(
-            partial(
-                _move_job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_forecasts
-            ),
-            load_jobs_from_analysis(analysis),
-            chunksize=1,
-        )
+        jobs = load_jobs_from_analysis(analysis)
+        for job in jobs:
+            _move_job(job=job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_forecasts)
+        # process_map(
+        #     partial(
+        #         _move_job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_forecasts
+        #     ),
+        #     jobs,
+        #     chunksize=1,
+        # )
 
     if format:
         _format(target, metric=metric, experiment=experiment, other_jobs=other_jobs)
@@ -140,6 +143,7 @@ def _format(source: Path, experiment: Optional[str], metric:str , other_jobs: Li
                     config = json.load(open(Path.joinpath(hp_dir, 'config.json'), 'r'))
                     performance = json.load(open(Path.joinpath(hp_dir, 'performance.json'), 'r'))
                     n = len(performance['performances'])
+                    print(performance['performances'][0]['training']['duration'] / 3600, ds, hp)
                     res = {}
                     if model == 'autogluon':
                         # leaderboard = pd.read_csv(Path.joinpath(hp_dir, 'leaderboard.csv'))
@@ -254,9 +258,4 @@ def _move_job(job: Job, target: Path, include_forecasts: bool, include_leaderboa
     # print('move_job')
     job.save(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
 
-def _foo(my_number):
-   square = my_number * my_number
-   print(my_number)
-   return square 
-
-# download()
+download()
