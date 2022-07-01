@@ -1,100 +1,111 @@
-# clone repository and conda 
+## Setting up an EC2 instance
+
+Launch an AWS EC2 instance with Ubuntu 20.04 (this avoids potential troubles) with enough disk storage. 
+We need at least 500GB to download and upload datasets.
+
+Create an IAM role, called `SagemakerAdmin`, which has the following policies. 
+- `AmazonEC2ContainerRegistryFullAccess`
+- `AmazonSageMakerFullAccess`
+- `AmazonS3FullAccess`
+
+Attach the IAM role `SagemakerAdmin` to the instance. One could do so by doing:
+
+Actions -> Security ->  Modify IAM role -> Select `SagemakerAdmin` -> Update IAM role.
+
+
+### Config AWS CLI
+Before run schedule, we must config the aws cli (only region is needed, they others can be left empty).
+
+```bash
+aws configure 
+AWS Access Key ID [None]: 
+AWS Secret Access Key [None]:
+Default region name [None]: us-west-2
+Default output format [None]: json
+```
+
+## Install
+### Clone the package
 ```bash
 git clone https://github.com/Yuang-Deng/tsbench.git
 git checkout autogluon_dev
 ```
 
-# install on EC2
-## enviroment set
-```bash
-bash bin/setup-ec2.sh  #must bash, if use sh, an error will be encountered
-source $HOME/.poetry/env
+### Setting up environment
 
-poetry install
-poetry shell
+### Install libraries that are needed for running tsbench   
+```bash
+bash bin/setup-ec2.sh
+source $HOME/.poetry/env
 ```
-When you need use tsbench cmd to run program, you need use source $HOME/.poetry/env to activate the virtual enviroment, and poetry shell to make cmd of tsbench available
-### issue
-You may encounter some errors during poetry install, you can see the log in terminal and install the package manually which not installed successful.
+
+### Install python virtual environment through `poetry`
+```bash
+poetry install
+```
 
 After all packages are successfully installed, you can see this line in terminal
 ```bash
 Installing the current project: tsbench (1.0.0)
 ```
 
-## config AWS CLI
-Before run schedule, we must config the aws cli.
-
-<!-- In aws configure, only region is needed, they others can be left empty. -->
-```bash
-aws configure 
-AWS Access Key ID [None]: your id
-AWS Secret Access Key [None]: your key
-Default region name [None]: us-west-2
-Default output format [None]: json
-```
-
-## config kaggle
-use your kaggle account
-
-## download datasets
+To activate the virtual environment in your terminal:
 
 ```bash
-tsbench datasets download \
-    --path=/home/ubuntu/data/datasets \ # the path you want to store the datasets.
-    --dataset=tourism_quarterly \ # specific a dataset which you want to download, if not specific, all datasets will be downloaded.
+poetry shell
 ```
 
-if you do not config the kaggle account, some dataset will not be download, but we can use the dataset 
+## Prepare the Data
 
-if "Command 'tsbench' not found", use poetry shell to activate the virtual enviroment
+Before evaluating forecasting methods, you need to prepare the benchmark datasets.
+You can run the following commands (assuming that you have executed `poetry shell`):
 
-## upload dataset
-upload the datasets to s3 bucket
 ```bash
-tsbench datasets upload \
-    --bucket=yuangbucket \ # your s3 bucket
-    --path=/home/ubuntu/data/datasets \ # The path of the datasets you downloaded
-    --prefix=datatest \ # the path you want to upload to in s3 bucket
+# Download and preprocess all datasets
+tsbench datasets download
+
+# Upload locally available datasets to your S3 bucket
+tsbench datasets upload --bucket <your_bucket_name>
 ```
 
-## build docker and upload to ECR
-Since autogluon is still under development, here are two ways to build docker images.
+Remember the name of the bucket that you used here. You will need it later! 
+We don't include Kaggle datasets in this runbook for automation reason. 
+If needed, please refer to `README.md` for using Kaggle datasets.
 
-Before run script to build docker image, you need to create a ECR repository, The name of the repository must be the same as the tag of docker you build
+## Prepare AWS Sagemaker
 
-for instance
+As training jobs on AWS Sagemaker run in Docker containers, you will need to build your own and
+upload it to the ECR registry. For this, you must first create an ECR repository named `tsbench`.
+Then, you can build and upload it by using the following utility script (it may take up to 1 hour):
+
 ```bash
-docker build \
-    -t $REGISTRY/tsbench-autogluon:jun22 \
-    -f $DOCKERFILE_PATH . 
+bash bin/build-container.sh
 ```
-tsbench-autogluon is the name of the ECR repository and jun22 is the tag of this image. This can be set in bin/build-container.sh
 
-### build docker image with local code
-You need to create a folder named as thirdparty, download the repository which you need in this folder, and modify the Dockerfile_local to install it on docker image
+The default docker image tag is `autogluon`.
+
+### Build docker image with local autogluon
+It may happen that you want to test a version of autogluon that has not been merged.
+For this, you need to create a folder named as `thirdparty` under project root 
+directory, then go inside `thridparty` folder and put your version of autogluon there.
+
+Then build the docker image with `local` option.
 ```bash
 sh bin/build-container.sh local
 ```
 
-### build docker image with remote code
-You can modify the Dockerfile to clone git repository and install it on docker image
-```bash
-sh bin/build-container.sh
-```
-
-## launch sagemaker job
+## Launch Sagemaker job
 ```bash
 tsbench evaluations schedule \
-    --config_path=./configs/benchmark/auto/autogluon.yaml \ # the config file you want to run
-    --sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759 \ # your sagemaker role
-    --experiment=tsbench-autogluon-runbook-test \ # the name of experiment
-    --data_bucket=yuangbucket \ # your s3 bucket name
-    --data_bucket_prefix=datatest \ # the path of datasets in your s3 bucket
-    --output_bucket=yuangbucket \ # your s3 bucket name
-    --output_bucket_prefix=evaluations \ # the path of the results you want to store in your s3 bucket
-    --docker_image=tsbench-autogluon:jun17 \ # the docker repository and tag you build before
-    --max_runtime=120 \
+    --config_path=configs/benchmark/autogluon_benchmark/autogluon.yaml
+    --sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759 \
+    --experiment=tsbench-autogluon-runbook-test \
+    --data_bucket=<your_bucket_name> \
+    --data_bucket_prefix=datatest \
+    --output_bucket= <your_bucket_name> \
+    --output_bucket_prefix=evaluations \
+    --docker_image=tsbench:autogluon \
+    --max_runtime=120
 ```
 
 ## collect the results of sagemaker job
