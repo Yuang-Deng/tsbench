@@ -64,7 +64,8 @@ DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly
     type=bool,
     default=False,
     help=(
-        "Whether to download leaderboard"
+        "Whether to download leaderboard, just usefull for"
+        "models that store the leaderboard."
     ),
 )
 @click.option(
@@ -78,13 +79,13 @@ DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly
     "--format",
     type=bool,
     default=False,
-    help="Whether to organize the results.",
+    help="Whether to visualize and store the results.",
 )
 @click.option(
     "--metric",
     type=str,
     default='mase',
-    help="Whether to organize the results.",
+    help="Which metric to use for visulization.",
 )
 def download(
     experiment: Optional[str], include_forecasts: bool, include_leaderboard: bool, evaluations_path: str, format: bool, metric: str
@@ -110,15 +111,13 @@ def download(
         analysis = aws.Analysis(experiment, status_list=['Completed, Failed'])
         other_jobs = analysis.other_jobs
         jobs = load_jobs_from_analysis(analysis)
-        for job in jobs:
-            _move_job(job=job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_forecasts)
-        # process_map(
-        #     partial(
-        #         _move_job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_forecasts
-        #     ),
-        #     jobs,
-        #     chunksize=1,
-        # )
+        process_map(
+            partial(
+                _move_job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_forecasts
+            ),
+            jobs,
+            chunksize=1,
+        )
 
     if format:
         _format(target, metric=metric, experiment=experiment, other_jobs=other_jobs)
@@ -143,7 +142,6 @@ def _format(source: Path, experiment: Optional[str], metric:str , other_jobs: Li
                     config = json.load(open(Path.joinpath(hp_dir, 'config.json'), 'r'))
                     performance = json.load(open(Path.joinpath(hp_dir, 'performance.json'), 'r'))
                     n = len(performance['performances'])
-                    print(performance['performances'][0]['training']['duration'] / 3600, ds, hp)
                     res = {}
                     if model == 'autogluon':
                         # leaderboard = pd.read_csv(Path.joinpath(hp_dir, 'leaderboard.csv'))
@@ -176,16 +174,6 @@ def _format(source: Path, experiment: Optional[str], metric:str , other_jobs: Li
             res['status'] = job.status
             abnormal_results.append(res)
             print(res['model'], ' \t', res['dataset'], ' \t', res['status'])
-
-    # TODO leader_board
-    
-    if experiment is None:
-        json.dump(results, open(Path.joinpath(source, 'tsbench.json'), 'w+'), indent=2)
-    else:
-        json.dump(results, open(Path.joinpath(source, experiment + '.json'), 'w+'), indent=2)
-        print('results of complemented experiments is saved in', Path.joinpath(source, experiment + '.json'))
-        json.dump(abnormal_results, open(Path.joinpath(source, experiment + '-abnormal.json'), 'w+'), indent=2)
-        print('results of others experiments is saved in', Path.joinpath(source, experiment + '-abnormal.json'))
 
 def _download_public_evaluations(
     include_forecasts: bool, evaluations_path: Path
@@ -258,5 +246,3 @@ def _extract_object_names(response: Dict[str, Any]) -> List[str]:
 
 def _move_job(job: Job, target: Path, include_forecasts: bool, include_leaderboard: bool):
     job.save(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
-
-# download()
