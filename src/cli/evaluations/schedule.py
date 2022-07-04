@@ -24,8 +24,7 @@ from tsbench.evaluations.aws import default_session
 from tsbench.evaluations.aws.ecr import image_uri
 from tsbench.evaluations.aws.framework import CustomFramework
 from tsbench.evaluations.metrics.sagemaker import metric_definitions
-from cli.evaluations._main import evaluations
-# from ._main import evaluations
+from ._main import evaluations
 
 
 @evaluations.command(short_help="Schedule evaluations on AWS Sagemaker.")
@@ -171,8 +170,6 @@ def schedule(
     all_configurations = generate_configurations(Path(config_path))
 
     # Then, we can run the training, passing parameters as required
-    job_index = 0
-    job_list = []
     source_bucket_prefix = "source"
     for configuration in iterate_configurations(all_configurations, nskip):
         # Create the estimator
@@ -227,17 +224,12 @@ def schedule(
                     },
                     wait=False,
                 )
-                job_index += 1
-                job_list.append({"job_name": estimator.latest_training_job.name, "config": configuration})
                 break
             except ClientError as err:
                 print(f"+++ Scheduling failed: {err}")
                 print("+++ Sleeping for 5 minutes.")
                 time.sleep(300)
-        json.dump({"job_index": job_index, "job_list": job_list}, open("temp_config.json", 'w+'))
 
         print(f">>> Launched job: {estimator.latest_training_job.name}")  # type: ignore
 
     print(">>> Successfully scheduled all training jobs.")
-
-# schedule()
