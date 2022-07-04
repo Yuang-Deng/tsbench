@@ -92,10 +92,9 @@ class FitResult:
                     log_metric(metric, value)
                 log_metric("latency", latency)
             else:
-                log_metric(
-                    "val_ncprs",
-                    evaluation.summary["ncrps"],
-                )
+                for metric, value in evaluation.summary.items():
+                    log_metric("val_" + metric, value)
+                log_metric("val_latency", latency)
 
     def serialize_predictors(self, directory: Path) -> None:
         """

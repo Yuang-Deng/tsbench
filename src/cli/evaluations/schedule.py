@@ -169,11 +169,15 @@ def schedule(
     all_configurations = generate_configurations(Path(config_path))
 
     # Then, we can run the training, passing parameters as required
+    source_bucket_prefix = "source"
     for configuration in iterate_configurations(all_configurations, nskip):
         # Create the estimator
         estimator = CustomFramework(
             sagemaker_session=sm_session,
             role=sagemaker_role,
+            code_location=(
+                f"s3://{output_bucket}/{source_bucket_prefix}/{experiment}"
+            ),
             tags=[
                 {"Key": "Experiment", "Value": experiment},
             ],
@@ -203,6 +207,9 @@ def schedule(
                 if not k.startswith("__")
             },
         )
+
+        estimator.framework_version = '0.0.1',
+        estimator.py_version = '3.8'
 
         while True:
             # Try fitting the estimator

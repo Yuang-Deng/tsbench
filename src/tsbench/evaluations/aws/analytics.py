@@ -119,31 +119,47 @@ class TrainingJob:
         log_file = self._cache_dir() / "logs.txt"
         if log_file.exists():
             with log_file.open("r") as f:
-                return f.read().split("\n")
+                logs = f.read().split("\n")
+                # if logs are completed, return them
+                if "Reporting training SUCCESS" in logs[-1]:
+                    return logs
+                
 
         # If not, fetch them
-        client = default_session().client("logs")
-        streams = client.describe_log_streams(
-            logGroupName="/aws/sagemaker/TrainingJobs",
-            logStreamNamePrefix=self.info["TrainingJobName"],
-        )
-        res = []
-        for stream in streams["logStreams"]:
-            params = {
-                "logGroupName": "/aws/sagemaker/TrainingJobs",
-                "logStreamName": stream["logStreamName"],
-                "startFromHead": True,
-            }
-            result = client.get_log_events(**params)
-            res.extend([event["message"] for event in result["events"]])
-            while "nextForwardToken" in result:
-                next_token = result["nextForwardToken"]
-                result = client.get_log_events(nextToken=next_token, **params)
-                if result["nextForwardToken"] == next_token:
-                    # The same token as before indicates end of stream, see
-                    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/logs.html#CloudWatchLogs.Client.get_log_events
-                    break
+        complete = False
+        retry = 1
+        while not complete:
+            client = default_session().client("logs")
+            streams = client.describe_log_streams(
+                logGroupName="/aws/sagemaker/TrainingJobs",
+                logStreamNamePrefix=self.info["TrainingJobName"],
+            )
+            res = []
+            for stream in streams["logStreams"]:
+                params = {
+                    "logGroupName": "/aws/sagemaker/TrainingJobs",
+                    "logStreamName": stream["logStreamName"],
+                    "startFromHead": True,
+                }
+                result = client.get_log_events(**params)
                 res.extend([event["message"] for event in result["events"]])
+                while "nextForwardToken" in result:
+                    next_token = result["nextForwardToken"]
+                    result = client.get_log_events(nextToken=next_token, **params)
+                    if result["nextForwardToken"] == next_token:
+                        # The same token as before indicates end of stream, see
+                        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/logs.html#CloudWatchLogs.Client.get_log_events
+                        break
+                    res.extend([event["message"] for event in result["events"]])
+            if "Reporting training SUCCESS" not in res[-1]:
+                logging.warning(
+                    "%dth retry, log download failed, sleep %d seconds and retry",
+                    retry, 60,
+                )
+                retry += 1
+                time.sleep(60)
+            else:
+                complete = True
 
         # Store them
         log_file.parent.mkdir(parents=True, exist_ok=True)
@@ -182,13 +198,24 @@ class TrainingJob:
         # If not, get them from the logs, write them to the file system and return
         metrics = {
             metric["Name"]: [
-                float(x)
+                float(x[0]) if isinstance(x, tuple) else float(x)
                 for x in re.findall(metric["Regex"], "\n".join(self.logs))
             ]
             for metric in self.info["AlgorithmSpecification"][
                 "MetricDefinitions"
             ]
         }
+        # use custmize traing time replace traing time when traing time = 0
+        if len(metrics['training_time']) == 0:
+            for (k, v) in metrics.items():
+                if '_traing_time' in k:
+                    metrics['training_time'] = v
+        # embad empty metric
+        job_num = len(metrics['training_time'])
+        for (k, v) in metrics.items():
+            if len(v) == 0:
+                metrics[k] = [0] * job_num
+
         with metrics_file.open("w+") as f:
             json.dump(metrics, f)
 
@@ -317,13 +344,14 @@ class Analysis:
                 same hyperparameters are found.
         """
         self.experiment_name = experiment
-        training_jobs, duplicates = _fetch_training_jobs(
+        training_jobs, duplicates, other_jobs = _fetch_training_jobs(
             default_session(),
             self.experiment_name,
             only_completed,
             resolve_duplicates,
         )
         self.duplicates = duplicates
+        self.other_jobs = other_jobs
         self.map = {t.name: t for t in training_jobs if include(t)}
         if len(self.map) < len(training_jobs):
             logging.warning(
@@ -364,7 +392,7 @@ def _fetch_training_jobs(
     experiment: str,
     only_completed: bool,
     resolve_duplicates: bool,
-) -> tuple[list[TrainingJob], list[TrainingJob]]:
+) -> tuple[list[TrainingJob], list[TrainingJob], list[TrainingJob]]:
     """
     Fetches all training jobs which are associated with this experiment.
     """
@@ -403,13 +431,19 @@ def _fetch_training_jobs(
                 time.sleep(1)
 
     jobs = [TrainingJob(r["TrainingJob"]) for r in results]
+    other_jobs = []
 
     if only_completed:
         completed_jobs = [j for j in jobs if j.status == "Completed"]
+        other_jobs = [j for j in jobs if j.status != "Completed"]
         if len(completed_jobs) < len(jobs):
             c = Counter([j.status for j in jobs])
             d = dict(c)
             del d["Completed"]
+            logging.warning(
+                " completed %d jobs",
+                len(completed_jobs),
+            )
             logging.warning(
                 " Analysis is ignoring %d jobs %s",
                 len(jobs) - len(completed_jobs),
@@ -439,7 +473,7 @@ def _fetch_training_jobs(
             )
         jobs = list(unique.values())
 
-    return jobs, duplicates
+    return jobs, duplicates, other_jobs
 
 
 # -------------------------------------------------------------------------------------------------

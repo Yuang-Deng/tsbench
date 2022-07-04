@@ -38,8 +38,35 @@ def metric_definitions() -> List[Dict[str, str]]:
             "Name": "val_ncrps",
             "Regex": _metric_regex("val_ncrps"),
         },
+        {
+            "Name": "val_nd",
+            "Regex": _metric_regex("val_nd"),
+        },
+        {
+            "Name": "val_nrmse",
+            "Regex": _metric_regex("val_nrmse"),
+        },
+        {
+            "Name": "val_mase",
+            "Regex": _metric_regex("val_mase"),
+        },
+        {
+            "Name": "val_smape",
+            "Regex": _metric_regex("val_smape"),
+        },
+        {
+            "Name": "val_latency",
+            "Regex": _metric_regex("val_latency"),
+        },
     ]
-    return scalar_metrics + list_metrics
+    custimze_metrics = [
+        {
+            "Name": "autogluon_traing_time",
+            "Regex": f"Total runtime: {_FLOATING_POINT_REGEX}"
+        },
+
+    ]
+    return scalar_metrics + list_metrics + custimze_metrics
 
 
 # -------------------------------------------------------------------------------------------------

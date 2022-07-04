@@ -1,0 +1,32 @@
+seeds: [42]
+datasets:
+  - rossmann
+  - covid_deaths
+  - m3_quarterly
+  - hospital
+  - solar
+  - tourism_quarterly
+  - m4_hourly
+  - m3_other
+  - tourism_monthly
+  - m4_weekly
+  - m3_monthly
+  - nn5
+  - electricity
+  - kdd_2018
+
+models:
+  arima: []
+  ets: []
+  npts: []
+  prophet: []
+  deepar:
+    - key: context_length_multiple
+      values: [1, 2, 4, 8]
+    - key: [num_layers, num_cells]
+      values: [[1, 20], [2, 40], [4, 80]]
+  mqcnn:
+    - key: context_length_multiple
+      values: [1, 2, 4, 8]
+    - key: [num_filters, kernel_size_first, kernel_size_hidden, kernel_size_last]
+      values: [[20, 3, 3, 2], [30, 7, 3, 3], [40, 14, 7, 3]]

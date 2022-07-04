@@ -176,7 +176,7 @@ class Job:
             cast(Path, self.source_path) / "forecasts" / f"model_{index:02}"
         )
 
-    def save(self, path: Path, include_forecasts: bool = True) -> None:
+    def save(self, path: Path, include_forecasts: bool = False, include_leaderboard: bool = False) -> None:
         """
         Stores all data associated with the training job in an auto-generated,
         unique folder within the provided directory.
@@ -201,7 +201,7 @@ class Job:
 
         # Make sure folder exists and is empty
         if target.exists():
-            if _check_all_data_available(target):
+            if _check_all_data_available(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard):
                 return
             shutil.rmtree(target)
 
@@ -214,32 +214,42 @@ class Job:
             json.dump(self.performance, f, indent=4)
 
         # As well as the forecasts (we ignore val forecasts as they are never used)
-        if include_forecasts:
+        if include_forecasts or include_leaderboard:
             num_models = len(self.performance["performances"])
             with self.source_job.artifact(cache=False) as artifact:
-                (target / "forecasts").mkdir()
-                for i in range(num_models):
-                    (target / "forecasts" / f"model_{i:02}").mkdir()
-                    shutil.copyfile(
-                        artifact.path
-                        / "predictions"
-                        / f"model_{i}"
-                        / "values.npy",
-                        target / "forecasts" / f"model_{i:02}" / "values.npy",
-                    )
-                    shutil.copyfile(
-                        artifact.path
-                        / "predictions"
-                        / f"model_{i}"
-                        / "metadata.npz",
-                        target
-                        / "forecasts"
-                        / f"model_{i:02}"
-                        / "metadata.npz",
-                    )
+                if include_forecasts:
+                    (target / "forecasts").mkdir()
+                    for i in range(num_models):
+                        (target / "forecasts" / f"model_{i:02}").mkdir()
+                        shutil.copyfile(
+                            artifact.path
+                            / "predictions"
+                            / f"model_{i}"
+                            / "values.npy",
+                            target / "forecasts" / f"model_{i:02}" / "values.npy",
+                        )
+                        shutil.copyfile(
+                            artifact.path
+                            / "predictions"
+                            / f"model_{i}"
+                            / "metadata.npz",
+                            target
+                            / "forecasts"
+                            / f"model_{i:02}"
+                            / "metadata.npz",
+                        )
+                if include_leaderboard:
+                    if not (artifact.path / "leaderboard.csv").exists():
+                        print('this job has no leaderboard')
+                    else:
+                        shutil.copyfile(
+                            artifact.path
+                            / "leaderboard.csv",
+                            target / "leaderboard.csv",
+                        )
 
         # Finally check that saving all data worked as expected
-        assert _check_all_data_available(target)
+        assert _check_all_data_available(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -256,7 +266,12 @@ def load_jobs_from_analysis(analysis: Analysis) -> list[Job]:
         This function might take a long time if job logs are not cached. They are downloaded
         sequentially.
     """
-    return [Job.from_training_job(job) for job in analysis]
+    jobs = []
+    for job in analysis:
+        print(job)
+        jobs.append(Job.from_training_job(job))
+    return jobs
+    # return [Job.from_training_job(job) for job in analysis]
 
 
 def load_jobs_from_directory(directory: Path) -> list[Job]:
@@ -307,6 +322,10 @@ def _extract_performance(job: TrainingJob) -> dict[str, Any]:
             "val_loss",
             "val_mean_weighted_quantile_loss",
             "val_ncrps",
+            "val_mase",
+            "val_smape",
+            "val_nrmse",
+            "val_nd",
         ],
         "testing": [
             "mase",
@@ -345,7 +364,7 @@ def _extract_performance(job: TrainingJob) -> dict[str, Any]:
         "meta": {
             "num_model_parameters": int(
                 job.metrics["num_model_parameters"][0].item()
-            ),
+            ) if job.metrics["num_model_parameters"].shape[0] > 0 else 0,
             "latency": np.mean(job.metrics["latency"]).item(),
         },
         "performances": performances,
@@ -361,10 +380,22 @@ def _extract_performance(job: TrainingJob) -> dict[str, Any]:
     return result
 
 
-def _check_all_data_available(target: Path) -> bool:
-    return (
-        (target / "config.json").exists()
-        and (target / "performance.json").exists()
-        and (target / "forecasts").exists()
-        and len(os.listdir(target / "forecasts")) in (1, 11)
-    )
+def _check_all_data_available(target: Path, include_forecasts: bool, include_leaderboard: bool) -> bool:
+    res = (
+            (target / "config.json").exists()
+            and (target / "performance.json").exists()
+        )
+    if include_leaderboard:
+        res = (
+            res
+            # and (target / "train_leaderboard.csv").exists()
+            and (target / "leaderboard.csv").exists()
+        )
+    if include_forecasts:
+        res = (
+            res
+            and (target / "forecasts").exists()
+            and len(os.listdir(target / "forecasts")) in (1, 11)
+        )
+
+    return res

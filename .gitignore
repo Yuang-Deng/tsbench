@@ -28,19 +28,5 @@ lightning_logs/
 # Autogluon
 AutogluonModels/
 
-# temo file 
-temp_*
-autopytorch1h_result.json
-metrics.tar.gz
-thirdparty/*
-tsbench-weekend-exp-others.json
-tsbench-weekend-exp.json
-sourcedir.tar.gz
-model.tar.gz
-train_leaderboard.csv
-configs/benchmark/auto/autogluon_test.yaml
-m5
-
-
 # Submodules
 vendor/
