@@ -108,7 +108,7 @@ def download(
         other_jobs = []
     else:
         print(f"Downloading data from experiment '{experiment}'...")
-        analysis = aws.Analysis(experiment, status_list=['Completed, Failed'])
+        analysis = aws.Analysis(experiment)
         other_jobs = analysis.other_jobs
         jobs = load_jobs_from_analysis(analysis)
         process_map(
