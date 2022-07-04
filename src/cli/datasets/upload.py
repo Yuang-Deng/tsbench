@@ -17,7 +17,7 @@ from tsbench.config import DATASET_REGISTRY
 from tsbench.constants import DEFAULT_DATA_PATH
 from tsbench.evaluations.aws import default_session
 from tsbench.evaluations.aws.s3 import upload_directory
-from cli.datasets._main import datasets
+from ._main import datasets
 
 
 @datasets.command(short_help="Upload locally available datasets to S3.")
@@ -49,5 +49,3 @@ def upload(path: str, bucket: str, prefix: str):
         upload_directory(
             s3, path + '/' + config.name(), bucket, f"{prefix}/{config.name()}"
         )
-
-# upload()
