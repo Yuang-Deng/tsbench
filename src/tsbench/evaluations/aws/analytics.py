@@ -123,7 +123,6 @@ class TrainingJob:
                 # if logs are completed, return them
                 if "Reporting training SUCCESS" in logs[-1]:
                     return logs
-                # return logs
                 
 
         # If not, fetch them
@@ -157,6 +156,7 @@ class TrainingJob:
                     "%dth retry, log download failed, sleep %d seconds and retry",
                     retry, 60,
                 )
+                retry += 1
                 time.sleep(60)
             else:
                 complete = True
@@ -188,9 +188,6 @@ class TrainingJob:
         """
         # Check if the logs are already available locally
         metrics_file = self._cache_dir() / "metrics.json"
-        import os
-        if os.path.exists(metrics_file):
-            os.remove(metrics_file)
         if metrics_file.exists():
             with metrics_file.open("r") as f:
                 return {
@@ -327,7 +324,6 @@ class Analysis:
         self,
         experiment: str,
         only_completed: bool = True,
-        status_list: List[str] = ['Completed'],
         include: Callable[[TrainingJob], bool] = lambda _: True,
         resolve_duplicates: bool = True,
     ):
@@ -353,7 +349,6 @@ class Analysis:
             self.experiment_name,
             only_completed,
             resolve_duplicates,
-            status_list,
         )
         self.duplicates = duplicates
         self.other_jobs = other_jobs
@@ -397,7 +392,6 @@ def _fetch_training_jobs(
     experiment: str,
     only_completed: bool,
     resolve_duplicates: bool,
-    status_list: List[str]
 ) -> tuple[list[TrainingJob], list[TrainingJob], list[TrainingJob]]:
     """
     Fetches all training jobs which are associated with this experiment.
