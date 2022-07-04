@@ -11,16 +11,3 @@ RUN pip install poetry==1.1.6 \
 COPY poetry.lock pyproject.toml /dependencies/
 RUN cd /dependencies \
     && poetry install --no-dev --no-root --no-interaction --no-ansi
-
-# the latest version of autogluon depend on mxnet==1.9, I will try to install mxnet by poetry
-RUN pip uninstall mxnet -y
-RUN pip install mxnet==1.9
-RUN pip install tbats
-RUN pip install pmdarima
-RUN pip install sktime
-
-# install autogluon with locally code
-RUN pip uninstall autogluon -y
-COPY thirdparty/autogluon /dependencies/autogluon/
-WORKDIR /dependencies/autogluon/
-RUN ./full_install.sh
