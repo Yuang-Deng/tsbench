@@ -15,8 +15,7 @@ from pathlib import Path
 import click
 from tsbench.constants import DEFAULT_EVALUATIONS_PATH
 from tsbench.utils import compress_directory
-from cli.evaluations._main import evaluations
-# from ._main import evaluations
+from ._main import evaluations
 
 
 @evaluations.command(
@@ -53,5 +52,3 @@ def archive(evaluations_path: str, archive_path: str):
         target / "metrics.tar.gz",
         include={"config.json", "performance.json"},
     )
-
-# archive()
