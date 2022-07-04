@@ -19,7 +19,6 @@ import shutil
 from pathlib import Path
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
-from pyrsistent import inc
 from tsbench.config import MODEL_REGISTRY
 from tsbench.evaluations.aws import Analysis, TrainingJob
 from tsbench.evaluations.metrics import Metric, Performance
