@@ -13,7 +13,6 @@
 
 import logging
 import os
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
@@ -88,32 +87,15 @@ class FitResult:
             eval_dir.mkdir(parents=True, exist_ok=True)
 
             prediction.save(eval_dir)
-            res_path = os.path.join(directory, 'res.json')
-            if os.path.exists(res_path):
-                res = json.load(open(res_path, 'r'))
-            else:
-                res = []
             
-            cur_res = {}
             if not validation:
                 for metric, value in evaluation.summary.items():
                     log_metric(metric, value)
-                    cur_res[metric] = float(value)
                 log_metric("latency", latency)
-                cur_res["latency"] = float(latency)
             else:
-                # log_metric(
-                #     "val_ncrps",
-                #     evaluation.summary["ncrps"],
-                # )
                 for metric, value in evaluation.summary.items():
                     log_metric("val_" + metric, value)
-                    cur_res["val_" + metric] = float(value)
                 log_metric("val_latency", latency)
-                cur_res["val_latency"] = float(latency)
-            res.append({f"model_{i}" : cur_res})
-            json.dump(res, open(res_path, 'w'))
-            logging.info('res.json is saved in %s', res_path)
 
     def serialize_predictors(self, directory: Path) -> None:
         """
