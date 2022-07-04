@@ -248,12 +248,6 @@ class Job:
                             / "leaderboard.csv",
                             target / "leaderboard.csv",
                         )
-                        # shutil.copyfile(
-                        #     artifact.path
-                        #     / "test_leaderboard.csv",
-                        #     target / "test_leaderboard.csv",
-                        # )
-
 
         # Finally check that saving all data worked as expected
         assert _check_all_data_available(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
