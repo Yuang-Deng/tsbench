@@ -557,10 +557,9 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
     The ETS estimator config.
     """
 
-    presets: str = None
-    auto_hyperparameters: str = None
+    presets: str = "default"
     run_time: int = 1 * 60 * 60
-    eval_metric: str = None
+    eval_metric: str = "mean_wQuantileLoss"
 
     @classmethod
     def name(cls) -> str:
@@ -582,8 +581,6 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
             freq=freq,
             prediction_length=prediction_length,
             presets=self.presets,
-            hyperparameters=self.auto_hyperparameters,
             run_time=self.run_time,
             eval_metric=self.eval_metric,
-            # callbacks=callbacks
         )
