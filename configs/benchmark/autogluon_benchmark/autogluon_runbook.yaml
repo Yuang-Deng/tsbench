@@ -1,4 +1,4 @@
-seeds: [42, 137, 69, 720, 24]
+seeds: [42]
 
 datasets:
   - covid_deaths
@@ -18,6 +18,6 @@ models:
     - key: presets
       values: [medium_quality]
     - key: run_time
-      values: [36000]
+      values: [30]
     - key: eval_metric
       values: [mean_wQuantileLoss] # AVAILABLE_METRICS = ["MASE", "MAPE", "sMAPE", "mean_wQuantileLoss", "MSE", "RMSE"]

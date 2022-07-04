@@ -8,6 +8,31 @@ Create an IAM role, called `SagemakerAdmin`, which has the following policies.
 - `AmazonSageMakerFullAccess`
 - `AmazonS3FullAccess`
 
+For the `SagemakerAdmin` role, make sure the Trust relationships is like following
+to grant SageMaker principal permissions to assume the role:
+
+```angular2html
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "ec2.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "sagemaker.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+```
 Attach the IAM role `SagemakerAdmin` to the instance. One could do so by doing:
 
 Actions -> Security ->  Modify IAM role -> Select `SagemakerAdmin` -> Update IAM role.
@@ -97,29 +122,29 @@ sh bin/build-container.sh local
 ## Launch Sagemaker job
 ```bash
 tsbench evaluations schedule \
-    --config_path=configs/benchmark/autogluon_benchmark/autogluon.yaml
-    --sagemaker_role=AmazonSageMaker-ExecutionRole-20210222T141759 \
-    --experiment=tsbench-autogluon-runbook-test \
-    --data_bucket=<your_bucket_name> \
-    --data_bucket_prefix=datatest \
-    --output_bucket= <your_bucket_name> \
-    --output_bucket_prefix=evaluations \
+    --config_path configs/benchmark/autogluon_benchmark/autogluon_runbook.yaml \
+    --sagemaker_role <your_arn_of_SagemakerAdmin_role> \
+    --experiment <your_experiment_name> \
+    --data_bucket <your_bucket_name> \
+    --data_bucket_prefix <your_dataset_prefix> \
+    --output_bucket <your_bucket_name> \
+    --output_bucket_prefix <your_output_prefix> \
     --docker_image=tsbench:autogluon \
     --max_runtime=120
 ```
 
-## collect the results of sagemaker job
+## Collect the results of sagemaker job (work in progress)
 ```bash
 tsbench evaluations download \
-    --experiment=tsbench-autogluon-runbook-test \ # the experiment name you want to download
-    --include_forecasts=False \ 
-    --include_leaderboard=False \ # download leaderboard to dictory, it only valid when model is autogluon
-    --format=True \ # whether to visualize the results as a table
+    --experiment <your_experiment_name> \
+    --include_forecasts=False \
+    --include_leaderboard=False # only relevant if you want to download leaderboard.csv from autogluon
 ```
 
-
-# for developer
-this is my launch.json
+# Other things might be helpful
+This section includes things that are not generally needed for running the benchmarmks. 
+It mostly contains convenient note when development the package.
+## For launching without command line options
 
 ```python
 {
