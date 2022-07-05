@@ -16,7 +16,7 @@ datasets:
 models:
   autogluon: 
     - key: presets
-      values: [medium_quality]
+      values: [good_quality]
     - key: run_time
       values: [36000]
     - key: eval_metric

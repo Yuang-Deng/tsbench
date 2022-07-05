@@ -19,7 +19,6 @@ import shutil
 from pathlib import Path
 from typing import Any, cast, Dict, List, Optional, Union
 import numpy as np
-from pyrsistent import inc
 from tsbench.config import MODEL_REGISTRY
 from tsbench.evaluations.aws import Analysis, TrainingJob
 from tsbench.evaluations.metrics import Metric, Performance
@@ -275,7 +274,6 @@ def load_jobs_from_analysis(analysis: Analysis) -> list[Job]:
     """
     jobs = []
     for job in analysis:
-        print(job)
         jobs.append(Job.from_training_job(job))
     return jobs
     # return [Job.from_training_job(job) for job in analysis]

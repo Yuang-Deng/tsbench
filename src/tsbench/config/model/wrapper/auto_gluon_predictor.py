@@ -26,6 +26,10 @@ class AutoGluonPredictor(Predictor):
 
     def __init__(self, model: TimeSeriesPredictor, prediction_length: int, freq: str, lead_time: int = 0) -> None:
         super().__init__(prediction_length, freq, lead_time)
+
+        if not AUTOGLUON_IS_INSTALLED:
+            raise ImportError(USAGE_MESSAGE)
+
         self.prediction_length = prediction_length
         self.freq = freq
         self.predictor = model
@@ -41,6 +45,7 @@ class AutoGluonPredictor(Predictor):
         data_frame = TimeSeriesDataFrame(dataset)
         outputs = self.predictor.predict(data_frame)
 
+        # FIXME There are some problems with the use of this leaderboard data
         model_path = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
         leaderboard = self.predictor.leaderboard(data_frame)
         leaderboard.to_csv(Path.joinpath(Path(model_path), 'leaderboard.csv'))

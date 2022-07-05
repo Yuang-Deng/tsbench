@@ -1,37 +1,20 @@
-import logging
-from time import time
-from typing import Callable, Dict, Iterator, List, NamedTuple, Optional
-
-import numpy as np
-import pandas as pd
-import toolz
-import os
-from pathlib import Path
+from typing import Dict, Optional
 
 from mxnet.gluon import HybridBlock
 
 from gluonts.core.component import validated
-from gluonts.dataset.common import DataEntry, Dataset
-from gluonts.model.forecast import SampleForecast
-from gluonts.model.predictor import RepresentablePredictor
-from gluonts.mx.trainer.callback import Callback, CallbackList
+from gluonts.dataset.common import Dataset
 
 from gluonts.dataset.common import Dataset
-from gluonts.dataset.loader import DataLoader
-from gluonts.itertools import Cached
 from gluonts.model.estimator import Estimator
 from gluonts.model.predictor import Predictor
-from gluonts.mx.trainer import Trainer
 from gluonts.transform import Transformation
 
-from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
-
-
 from .auto_gluon_predictor import AutoGluonPredictor
-# try:
-#     from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
-# except ImportError:
-#     TimeSeriesPredictor = None
+try:
+    from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
+except ImportError:
+    TimeSeriesPredictor = None
 
 AUTOGLUON_IS_INSTALLED = TimeSeriesPredictor is not None
 
@@ -43,16 +26,9 @@ The `AutoGluonEstimator` is a thin wrapper for calling the `AutoGluon` package.
 
 class AutoGluonEstimator(Estimator):
     """
-    Wrapper around `Autogluon <https://github.com/facebook/prophet>`_.
+    Wrapper around `Autogluon <https://github.com/awslabs/autogluon>`_.
 
     The `AutoGluonPredictor` is a thin wrapper for calling the `Autogluon`
-    package. In order to use it you need to install the package::
-
-        # you can either install Prophet directly
-        pip install fbprophet
-
-        # or install gluonts with the Prophet extras
-        pip install gluonts[Prophet]
 
     Parameters
     ----------
@@ -60,17 +36,12 @@ class AutoGluonEstimator(Estimator):
         Time frequency of the data, e.g. '1H'
     prediction_length
         Number of time points to predict
-    prophet_params
-        Parameters to pass when instantiating the prophet model.
-    init_model
-        An optional function that will be called with the configured model.
-        This can be used to configure more complex setups, e.g.
-
-        >>> def configure_model(model):
-        ...     model.add_seasonality(
-        ...         name='weekly', period=7, fourier_order=3, prior_scale=0.1
-        ...     )
-        ...     return model
+    run_time
+        The time limit parameter for autogluon
+    eval_metric
+        The metric score in leaderboard results
+    presets
+        The preset parameter used in autogluon
     """
 
     @validated()
@@ -80,29 +51,17 @@ class AutoGluonEstimator(Estimator):
         prediction_length: int,
         run_time: int,
         eval_metric: str,
-        autogluonts_params: Optional[Dict] = None,
-        presets: Optional[str] = None,
-        hyperparameters: Optional[str] = None,
-        # callbacks: Optional[List[Callback]] = None,
+        presets: Optional[str],
     ) -> None:
         super().__init__(freq=freq, prediction_length=prediction_length)
 
         if not AUTOGLUON_IS_INSTALLED:
             raise ImportError(USAGE_MESSAGE)
 
-        if autogluonts_params is None:
-            autogluonts_params = {}
-
-        assert "uncertainty_samples" not in autogluonts_params, (
-            "Parameter 'uncertainty_samples' should not be set directly. "
-            "Please use 'num_samples' in the 'predict' method instead."
-        )
         self.freq = freq
         self.prediction_length = prediction_length
-        self.autogluonts_params = autogluonts_params
         self.autogluonts = TimeSeriesPredictor(prediction_length=prediction_length, eval_metric=eval_metric)
         self.presets = presets
-        self.hyperparameters = hyperparameters
         self.run_time = run_time
 
     def train_model(
@@ -118,13 +77,7 @@ class AutoGluonEstimator(Estimator):
         train_dataframe = TimeSeriesDataFrame(training_data)
         valid_dataframe = TimeSeriesDataFrame(validation_data)
 
-        # print('autogluon time limit:', self.run_time, 'preset:', self.presets)
         tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=self.run_time)
-        # self.autogluonts.leaderboard()
-        # it is not needed, we can get the score_val when predict
-        # model_path = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
-        # leaderboard = self.autogluonts.leaderboard()
-        # leaderboard.to_csv(Path.joinpath(Path(model_path), 'train_leaderboard.csv'))
         
         return AutoGluonPredictor(tspredictor, prediction_length=self.prediction_length, freq=self.freq)
 
