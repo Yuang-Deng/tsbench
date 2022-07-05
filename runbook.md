@@ -133,12 +133,15 @@ tsbench evaluations schedule \
     --max_runtime=120
 ```
 
-## Collect the results of sagemaker job (work in progress)
+## Collect the results of sagemaker job and summarize (work in progress)
 ```bash
 tsbench evaluations download \
     --experiment <your_experiment_name> \
     --include_forecasts=False \
     --include_leaderboard=False # only relevant if you want to download leaderboard.csv from autogluon
+
+tsbench evaluations summarize \
+    --experiment <your_experiment_name> \
 ```
 
 # Other things might be helpful
