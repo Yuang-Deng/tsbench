@@ -176,5 +176,3 @@ def _extract_object_names(response: Dict[str, Any]) -> List[str]:
 
 def _move_job(job: Job, target: Path, include_forecasts: bool, include_leaderboard: bool):
     job.save(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)
-
-# download()

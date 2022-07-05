@@ -984,261 +984,261 @@ class M1MonthlyDatasetConfig(MonashDatasetConfig):
         return 18
 
 
-@register_dataset
-@dataclass(frozen=True)
-class RossmannDatasetConfig(KaggleDatasetConfig):
-    """
-    The dataset configuration for the "Rossmann Store Sales" Kaggle
-    competition.
-    """
-
-    @classmethod
-    def name(cls) -> str:
-        return "rossmann"
-
-    @property
-    def max_training_time(self) -> int:
-        return 7200
-
-    @property
-    def _link(self) -> str:
-        return "https://www.kaggle.com/c/rossmann-store-sales"
-
-    def _extract_data(
-        self, path: Path
-    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-        # Read the raw data
-        data = cast(pd.DataFrame, pd.read_csv(path / "train.csv"))
-        stores = cast(pd.DataFrame, pd.read_csv(path / "store.csv"))
-
-        # Generate GluonTS dataset
-        metadata = {
-            "freq": "D",
-            "prediction_length": 48,
-            "feat_static_cat": [
-                {
-                    "name": "store",
-                    "cardinality": len(stores),
-                },
-            ],
-        }
-
-        series = []
-        for i, store_data in data.groupby("Store"):
-            sorted_data = store_data.sort_values("Date")
-            series.append(
-                {
-                    "item_id": int(i) - 1,
-                    "start": sorted_data.Date.min(),
-                    "target": sorted_data.Sales.to_list(),
-                    "feat_static_cat": [
-                        int(i) - 1,
-                    ],
-                }
-            )
-
-        return metadata, series
-
-
-@register_dataset
-@dataclass(frozen=True)
-class CorporacionFavoritaDatasetConfig(KaggleDatasetConfig):
-    """
-    The dataset configuration for the "Corporación Favorita" Kaggle
-    competition.
-    """
-
-    @classmethod
-    def name(cls) -> str:
-        return "corporacion_favorita"
-
-    @property
-    def max_training_time(self) -> int:
-        return 28800
-
-    @property
-    def _link(self) -> str:
-        return "https://www.kaggle.com/c/favorita-grocery-sales-forecasting"
-
-    def _extract_data(
-        self, path: Path
-    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-        # Read the raw data
-        data = cast(pd.DataFrame, pd.read_csv(path / "train.csv"))
-        stores = cast(pd.DataFrame, pd.read_csv(path / "stores.csv"))
-        item_ids = np.sort(data.item_nbr.unique())
-
-        # Generate GluonTS dataset
-        metadata = {
-            "freq": "D",
-            "prediction_length": 16,
-            "feat_static_cat": [
-                {
-                    "name": "store",
-                    "cardinality": len(stores),
-                },
-                {
-                    "name": "item",
-                    "cardinality": len(item_ids),
-                },
-            ],
-        }
-
-        series = []
-        for i, ((item, store_id), group_data) in enumerate(
-            data.groupby(["item_nbr", "store_nbr"])
-        ):
-            item_id = np.where(item_ids == item)[0][0]
-            sorted_data = group_data.sort_values("date")
-            sales = pd.Series(
-                sorted_data.unit_sales.to_numpy(),
-                index=pd.DatetimeIndex(sorted_data.date),
-            )
-            series.append(
-                {
-                    "item_id": i,
-                    "start": sorted_data.date.min(),
-                    "target": sales.resample("D")
-                    .first()
-                    .fillna(value=0)
-                    .to_list(),
-                    "feat_static_cat": [
-                        int(store_id) - 1,
-                        int(item_id),
-                    ],
-                }
-            )
-
-        return metadata, series
-
-
-@register_dataset
-@dataclass(frozen=True)
-class WalmartDatasetConfig(KaggleDatasetConfig):
-    """
-    The dataset configuration for the "Walmart Recruiting" Kaggle competition.
-    """
-
-    @classmethod
-    def name(cls) -> str:
-        return "walmart"
-
-    @property
-    def max_training_time(self) -> int:
-        return 7200
-
-    @property
-    def _link(self) -> str:
-        return "https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting"
-
-    def _extract_data(
-        self, path: Path
-    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-        # Read the raw data
-        data = cast(pd.DataFrame, pd.read_csv(path / "train.csv"))
-        department_ids = np.sort(data.Dept.unique())
-
-        # Generate GluonTS dataset
-        metadata = {
-            "freq": "W",
-            "prediction_length": 39,
-            "feat_static_cat": [
-                {
-                    "name": "store",
-                    "cardinality": len(
-                        data.Store.unique()
-                    ),  # pylint: disable=no-member
-                },
-                {
-                    "name": "department",
-                    "cardinality": len(department_ids),
-                },
-            ],
-        }
-
-        series = []
-        # pylint: disable=no-member
-        for i, ((store_id, department), group_data) in enumerate(
-            data.groupby(["Store", "Dept"])
-        ):
-            department_id = np.where(department_ids == department)[0][0]
-            sorted_data = group_data.sort_values("Date")
-            series.append(
-                {
-                    "item_id": i,
-                    "start": sorted_data.Date.min(),
-                    "target": sorted_data.Weekly_Sales.to_list(),
-                    "feat_static_cat": [
-                        int(store_id) - 1,
-                        int(department_id),
-                    ],
-                }
-            )
-
-        return metadata, series
-
-
-@register_dataset
-@dataclass(frozen=True)
-class RestaurantDatasetConfig(KaggleDatasetConfig):
-    """
-    The dataset configuration for the "Restaurant" Kaggle competition.
-    """
-
-    @classmethod
-    def name(cls) -> str:
-        return "restaurant"
-
-    @property
-    def max_training_time(self) -> int:
-        return 7200
-
-    @property
-    def _link(self) -> str:
-        return (
-            "https://www.kaggle.com/c/recruit-restaurant-visitor-forecasting"
-        )
-
-    def _extract_data(
-        self, path: Path
-    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-        # Read the raw data
-        data = cast(pd.DataFrame, pd.read_csv(path / "air_visit_data.csv"))
-        store_ids = np.sort(data.air_store_id.unique())
-
-        # Generate GluonTS dataset
-        metadata = {
-            "freq": "D",
-            "prediction_length": 39,
-            "feat_static_cat": [
-                {
-                    "name": "restaurant",
-                    "cardinality": len(store_ids),
-                },
-            ],
-        }
-
-        series = []
-        # pylint: disable=no-member
-        for i, (store, group_data) in enumerate(data.groupby("air_store_id")):
-            store_id = np.where(store_ids == store)[0][0]
-            sorted_data = group_data.sort_values("visit_date")
-            visitors = pd.Series(
-                sorted_data.visitors.to_numpy(),
-                index=pd.DatetimeIndex(sorted_data.visit_date),
-            )
-            series.append(
-                {
-                    "item_id": i,
-                    "start": sorted_data.visit_date.min(),
-                    "target": visitors.resample("D")
-                    .first()
-                    .fillna(value=0)
-                    .to_list(),
-                    "feat_static_cat": [
-                        int(store_id),
-                    ],
-                }
-            )
-
-        return metadata, series
+# @register_dataset
+# @dataclass(frozen=True)
+# class RossmannDatasetConfig(KaggleDatasetConfig):
+#     """
+#     The dataset configuration for the "Rossmann Store Sales" Kaggle
+#     competition.
+#     """
+#
+#     @classmethod
+#     def name(cls) -> str:
+#         return "rossmann"
+#
+#     @property
+#     def max_training_time(self) -> int:
+#         return 7200
+#
+#     @property
+#     def _link(self) -> str:
+#         return "https://www.kaggle.com/c/rossmann-store-sales"
+#
+#     def _extract_data(
+#         self, path: Path
+#     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+#         # Read the raw data
+#         data = cast(pd.DataFrame, pd.read_csv(path / "train.csv"))
+#         stores = cast(pd.DataFrame, pd.read_csv(path / "store.csv"))
+#
+#         # Generate GluonTS dataset
+#         metadata = {
+#             "freq": "D",
+#             "prediction_length": 48,
+#             "feat_static_cat": [
+#                 {
+#                     "name": "store",
+#                     "cardinality": len(stores),
+#                 },
+#             ],
+#         }
+#
+#         series = []
+#         for i, store_data in data.groupby("Store"):
+#             sorted_data = store_data.sort_values("Date")
+#             series.append(
+#                 {
+#                     "item_id": int(i) - 1,
+#                     "start": sorted_data.Date.min(),
+#                     "target": sorted_data.Sales.to_list(),
+#                     "feat_static_cat": [
+#                         int(i) - 1,
+#                     ],
+#                 }
+#             )
+#
+#         return metadata, series
+#
+#
+# @register_dataset
+# @dataclass(frozen=True)
+# class CorporacionFavoritaDatasetConfig(KaggleDatasetConfig):
+#     """
+#     The dataset configuration for the "Corporación Favorita" Kaggle
+#     competition.
+#     """
+#
+#     @classmethod
+#     def name(cls) -> str:
+#         return "corporacion_favorita"
+#
+#     @property
+#     def max_training_time(self) -> int:
+#         return 28800
+#
+#     @property
+#     def _link(self) -> str:
+#         return "https://www.kaggle.com/c/favorita-grocery-sales-forecasting"
+#
+#     def _extract_data(
+#         self, path: Path
+#     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+#         # Read the raw data
+#         data = cast(pd.DataFrame, pd.read_csv(path / "train.csv"))
+#         stores = cast(pd.DataFrame, pd.read_csv(path / "stores.csv"))
+#         item_ids = np.sort(data.item_nbr.unique())
+#
+#         # Generate GluonTS dataset
+#         metadata = {
+#             "freq": "D",
+#             "prediction_length": 16,
+#             "feat_static_cat": [
+#                 {
+#                     "name": "store",
+#                     "cardinality": len(stores),
+#                 },
+#                 {
+#                     "name": "item",
+#                     "cardinality": len(item_ids),
+#                 },
+#             ],
+#         }
+#
+#         series = []
+#         for i, ((item, store_id), group_data) in enumerate(
+#             data.groupby(["item_nbr", "store_nbr"])
+#         ):
+#             item_id = np.where(item_ids == item)[0][0]
+#             sorted_data = group_data.sort_values("date")
+#             sales = pd.Series(
+#                 sorted_data.unit_sales.to_numpy(),
+#                 index=pd.DatetimeIndex(sorted_data.date),
+#             )
+#             series.append(
+#                 {
+#                     "item_id": i,
+#                     "start": sorted_data.date.min(),
+#                     "target": sales.resample("D")
+#                     .first()
+#                     .fillna(value=0)
+#                     .to_list(),
+#                     "feat_static_cat": [
+#                         int(store_id) - 1,
+#                         int(item_id),
+#                     ],
+#                 }
+#             )
+#
+#         return metadata, series
+#
+#
+# @register_dataset
+# @dataclass(frozen=True)
+# class WalmartDatasetConfig(KaggleDatasetConfig):
+#     """
+#     The dataset configuration for the "Walmart Recruiting" Kaggle competition.
+#     """
+#
+#     @classmethod
+#     def name(cls) -> str:
+#         return "walmart"
+#
+#     @property
+#     def max_training_time(self) -> int:
+#         return 7200
+#
+#     @property
+#     def _link(self) -> str:
+#         return "https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting"
+#
+#     def _extract_data(
+#         self, path: Path
+#     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+#         # Read the raw data
+#         data = cast(pd.DataFrame, pd.read_csv(path / "train.csv"))
+#         department_ids = np.sort(data.Dept.unique())
+#
+#         # Generate GluonTS dataset
+#         metadata = {
+#             "freq": "W",
+#             "prediction_length": 39,
+#             "feat_static_cat": [
+#                 {
+#                     "name": "store",
+#                     "cardinality": len(
+#                         data.Store.unique()
+#                     ),  # pylint: disable=no-member
+#                 },
+#                 {
+#                     "name": "department",
+#                     "cardinality": len(department_ids),
+#                 },
+#             ],
+#         }
+#
+#         series = []
+#         # pylint: disable=no-member
+#         for i, ((store_id, department), group_data) in enumerate(
+#             data.groupby(["Store", "Dept"])
+#         ):
+#             department_id = np.where(department_ids == department)[0][0]
+#             sorted_data = group_data.sort_values("Date")
+#             series.append(
+#                 {
+#                     "item_id": i,
+#                     "start": sorted_data.Date.min(),
+#                     "target": sorted_data.Weekly_Sales.to_list(),
+#                     "feat_static_cat": [
+#                         int(store_id) - 1,
+#                         int(department_id),
+#                     ],
+#                 }
+#             )
+#
+#         return metadata, series
+#
+#
+# @register_dataset
+# @dataclass(frozen=True)
+# class RestaurantDatasetConfig(KaggleDatasetConfig):
+#     """
+#     The dataset configuration for the "Restaurant" Kaggle competition.
+#     """
+#
+#     @classmethod
+#     def name(cls) -> str:
+#         return "restaurant"
+#
+#     @property
+#     def max_training_time(self) -> int:
+#         return 7200
+#
+#     @property
+#     def _link(self) -> str:
+#         return (
+#             "https://www.kaggle.com/c/recruit-restaurant-visitor-forecasting"
+#         )
+#
+#     def _extract_data(
+#         self, path: Path
+#     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+#         # Read the raw data
+#         data = cast(pd.DataFrame, pd.read_csv(path / "air_visit_data.csv"))
+#         store_ids = np.sort(data.air_store_id.unique())
+#
+#         # Generate GluonTS dataset
+#         metadata = {
+#             "freq": "D",
+#             "prediction_length": 39,
+#             "feat_static_cat": [
+#                 {
+#                     "name": "restaurant",
+#                     "cardinality": len(store_ids),
+#                 },
+#             ],
+#         }
+#
+#         series = []
+#         # pylint: disable=no-member
+#         for i, (store, group_data) in enumerate(data.groupby("air_store_id")):
+#             store_id = np.where(store_ids == store)[0][0]
+#             sorted_data = group_data.sort_values("visit_date")
+#             visitors = pd.Series(
+#                 sorted_data.visitors.to_numpy(),
+#                 index=pd.DatetimeIndex(sorted_data.visit_date),
+#             )
+#             series.append(
+#                 {
+#                     "item_id": i,
+#                     "start": sorted_data.visit_date.min(),
+#                     "target": visitors.resample("D")
+#                     .first()
+#                     .fillna(value=0)
+#                     .to_list(),
+#                     "feat_static_cat": [
+#                         int(store_id),
+#                     ],
+#                 }
+#             )
+#
+#         return metadata, series
