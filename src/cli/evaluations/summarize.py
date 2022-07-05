@@ -13,15 +13,10 @@
 
 import json
 from pathlib import Path
-from typing_extensions import Required
-from typing import Any, cast, Dict, List, Optional
-from unittest import result
 import click
 import os
 import pandas as pd
-from traitlets import default
 from tsbench.constants import DEFAULT_EVALUATIONS_PATH
-from tsbench.utils import compress_directory
 from cli.evaluations._main import evaluations
 
 BASELINES = ["arima", "ets", "prophet", "mqcnn"]
@@ -55,19 +50,24 @@ DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly
 )
 def summarize(evaluations_path: Path, experiment: str, metric:str):
     results = []
-    autogluon_models = set()
     source = Path(evaluations_path)
     source = Path.joinpath(source, experiment)
-    models = os.listdir(source)
-    #norm results
-    for model in models:
-        model_dir = Path.joinpath(source, model)
-        if Path.is_file(model_dir):
-            continue
-        datasets = os.listdir(model_dir)
-        for ds in datasets:
-            # TODO collect dataset we need, try collect all dataset but just print we need
-            if ds in DATASETS:
+    if Path.joinpath(source, experiment + '.csv').exists():
+        print("load from csv file:", Path.joinpath(source, experiment + '.csv'))
+        res_df = pd.read_csv(Path.joinpath(source, experiment + '.csv'))
+        index_models = list(set(res_df.model.values.tolist()))
+    else:
+        models = os.listdir(source)
+        autogluon_models = set()
+        for model in models:
+            model_dir = Path.joinpath(source, model)
+            if Path.is_file(model_dir):
+                continue
+            datasets = os.listdir(model_dir)
+            for ds in datasets:
+                # TODO collect dataset we need, try collect all dataset but just print we need
+                if ds not in DATASETS:
+                    continue
                 ds_dir = Path.joinpath(model_dir, ds)
                 hyperparameters = os.listdir(ds_dir)
                 for hp in hyperparameters:
@@ -89,12 +89,13 @@ def summarize(evaluations_path: Path, experiment: str, metric:str):
                     res['seed'] = config['seed']
                     res['hps'] = hp
                     results.append(res)
-    
-    res_df = pd.DataFrame(results)
-    res_df.to_csv(Path.joinpath(source, experiment + '.csv'))
-    print('results has been saved at:', Path.joinpath(source, experiment + '.csv'))
+
+        index_models = BASELINES + list(autogluon_models)
+        res_df = pd.DataFrame(results)
+        res_df.to_csv(Path.joinpath(source, experiment + '.csv'))
+        print('results has been saved at:', Path.joinpath(source, experiment + '.csv'))
+
     res_df = res_df.loc[res_df.groupby(['dataset', 'model', 'seed']).val_loss.idxmin()]
-    index_models = BASELINES + list(autogluon_models)
     print(res_df.pivot_table(index='dataset', columns='model', values=metric).reindex(index_models, axis=1))
 
-# summarize()
+summarize()

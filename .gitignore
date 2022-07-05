@@ -32,15 +32,14 @@ AutogluonModels/
 temp_*
 autopytorch1h_result.json
 metrics.tar.gz
-thirdparty/*
+thirdparty
 tsbench-weekend-exp-others.json
 tsbench-weekend-exp.json
 sourcedir.tar.gz
 model.tar.gz
 train_leaderboard.csv
-configs/benchmark/auto/autogluon_test.yaml
-configs/benchmark/auto/tsbench_seed.yaml
 m5
+configs/benchmark/auto/
 
 
 # Submodules
