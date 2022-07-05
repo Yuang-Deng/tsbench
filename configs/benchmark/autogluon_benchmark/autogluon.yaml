@@ -46,27 +46,27 @@ datasets:
   # - restaurant
 
   # small datasets
-  - rossmann
-  - covid_deaths
-  - m3_quarterly
-  - hospital
+  # - rossmann
+  # - covid_deaths
+  # - m3_quarterly
+  # - hospital
   - solar
-  - tourism_quarterly
-  - m4_hourly
-  - m3_other
-  - tourism_monthly
-  - m4_weekly
-  - m3_monthly
-  - nn5
-  - electricity
+  # - tourism_quarterly
+  # - m4_hourly
+  # - m3_other
+  # - tourism_monthly
+  # - m4_weekly
+  # - m3_monthly
+  # - nn5
+  # - electricity
   - kdd_2018
 
 models:
   autogluon: 
     - key: presets
-      values: [medium_quality]
+      values: [good_quality]
     - key: run_time
-      values: [30]
+      values: [36000]
     - key: eval_metric
       values: [mean_wQuantileLoss]
 

@@ -171,8 +171,6 @@ def schedule(
     all_configurations = generate_configurations(Path(config_path))
 
     # Then, we can run the training, passing parameters as required
-    job_index = 0
-    job_list = []
     source_bucket_prefix = "source"
     for configuration in iterate_configurations(all_configurations, nskip):
         # Create the estimator
@@ -227,14 +225,11 @@ def schedule(
                     },
                     wait=False,
                 )
-                job_index += 1
-                job_list.append({"job_name": estimator.latest_training_job.name, "config": configuration})
                 break
             except ClientError as err:
                 print(f"+++ Scheduling failed: {err}")
                 print("+++ Sleeping for 5 minutes.")
                 time.sleep(300)
-        json.dump({"job_index": job_index, "job_list": job_list}, open("temp_config.json", 'w+'))
 
         print(f">>> Launched job: {estimator.latest_training_job.name}")  # type: ignore
 
