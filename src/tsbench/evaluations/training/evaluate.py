@@ -87,6 +87,10 @@ class FitResult:
             eval_dir.mkdir(parents=True, exist_ok=True)
 
             prediction.save(eval_dir)
+<<<<<<< HEAD
+=======
+            
+>>>>>>> autogluon_dev
             if not validation:
                 for metric, value in evaluation.summary.items():
                     log_metric(metric, value)
