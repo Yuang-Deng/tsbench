@@ -268,7 +268,6 @@ def load_jobs_from_analysis(analysis: Analysis) -> list[Job]:
     """
     jobs = []
     for job in analysis:
-        print(job)
         jobs.append(Job.from_training_job(job))
     return jobs
     # return [Job.from_training_job(job) for job in analysis]

@@ -42,13 +42,6 @@ class AutoGluonEstimator(Estimator):
         The metric score in leaderboard results
     presets
         The preset parameter used in autogluon
-
-
-    prophet_params
-        Parameters to pass when instantiating the prophet model.
-    init_model
-        An optional function that will be called with the configured model.
-        This can be used to configure more complex setups, e.g.
     """
 
     @validated()

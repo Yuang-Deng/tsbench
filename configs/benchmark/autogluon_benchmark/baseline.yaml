@@ -1,10 +1,9 @@
-seeds: [42]
+seeds: [42, 137, 69, 720, 24]
+
 datasets:
-  - rossmann
   - covid_deaths
   - m3_quarterly
   - hospital
-  - solar
   - tourism_quarterly
   - m4_hourly
   - m3_other
@@ -13,7 +12,6 @@ datasets:
   - m3_monthly
   - nn5
   - electricity
-  - kdd_2018
 
 models:
   arima: []
