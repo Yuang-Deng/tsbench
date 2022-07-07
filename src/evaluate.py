@@ -103,6 +103,9 @@ from tsbench.evaluations.training import fit_estimator
 @click.option("--tft_num_heads", default=4, show_default=True)
 @click.option("--nbeats_num_stacks", default=30, show_default=True)
 @click.option("--nbeats_num_blocks", default=1, show_default=True)
+@click.option("--autogluon_presets", default=None, show_default=True)
+@click.option("--autogluon_run_time", default=1*60*60*10, show_default=True)
+@click.option("--autogluon_eval_metric", default='mean_wQuantileLoss', show_default=True)
 def main(
     dataset: str,
     model: str,
@@ -126,7 +129,7 @@ def main(
     """
     # Basic configuration
     env.use_tqdm = use_tqdm
-    logging.basicConfig(level=logging.INFO)
+    logging.getLogger().setLevel(logging.INFO)
 
     # Setup
     model_dir = Path(model_path)

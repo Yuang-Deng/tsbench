@@ -13,6 +13,7 @@
 
 from ._base import ModelConfig, TrainConfig
 from ._factory import get_model_config, MODEL_REGISTRY
+from .wrapper import *
 from .models import *
 
 __all__ = [

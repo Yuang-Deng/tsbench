@@ -187,6 +187,9 @@ class DatasetSplit:
             self._directory / "gluonts" / self._split, freq=self._metadata.freq
         )
 
+    def pandas(self) -> Dataset:
+        pass
+
     def evaluation(self) -> EvaluationDataset:
         """
         Returns the NumPy arrays that are used to perform evaluation.
