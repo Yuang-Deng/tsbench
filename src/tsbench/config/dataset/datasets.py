@@ -312,27 +312,27 @@ class M4YearlyDatasetConfig(GluonTsDatasetConfig):
         return False
 
 
-@register_dataset
-@dataclass(frozen=True)
-class M5DatasetConfig(GluonTsDatasetConfig):
-    """
-    The dataset configuration for the `m5` dataset.
-    """
+# @register_dataset
+# @dataclass(frozen=True)
+# class M5DatasetConfig(GluonTsDatasetConfig):
+#     """
+#     The dataset configuration for the `m5` dataset.
+#     """
 
-    @classmethod
-    def name(cls) -> str:
-        return "m5"
+#     @classmethod
+#     def name(cls) -> str:
+#         return "m5"
 
-    @property
-    def max_training_time(self) -> int:
-        return 28800
+#     @property
+#     def max_training_time(self) -> int:
+#         return 28800
 
-    def _materialize(self, directory: Path, regenerate: bool = False) -> None:
-        shutil.copytree(
-            Path.home() / ".mxnet" / "gluon-ts" / "datasets" / "m5",
-            directory / "m5",
-        )
-        super()._materialize(directory, regenerate=True)
+#     def _materialize(self, directory: Path, regenerate: bool = False) -> None:
+#         shutil.copytree(
+#             Path.home() / ".mxnet" / "gluon-ts" / "datasets" / "m5",
+#             directory / "m5",
+#         )
+#         super()._materialize(directory, regenerate=True)
 
 
 @register_dataset

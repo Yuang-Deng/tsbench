@@ -11,7 +11,6 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-import json
 import os
 import time
 from datetime import datetime, timezone
@@ -24,8 +23,7 @@ from tsbench.evaluations.aws import default_session
 from tsbench.evaluations.aws.ecr import image_uri
 from tsbench.evaluations.aws.framework import CustomFramework
 from tsbench.evaluations.metrics.sagemaker import metric_definitions
-from cli.evaluations._main import evaluations
-# from ._main import evaluations
+from ._main import evaluations
 
 
 @evaluations.command(short_help="Schedule evaluations on AWS Sagemaker.")
@@ -234,5 +232,3 @@ def schedule(
         print(f">>> Launched job: {estimator.latest_training_job.name}")  # type: ignore
 
     print(">>> Successfully scheduled all training jobs.")
-
-#schedule()

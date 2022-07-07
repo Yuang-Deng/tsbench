@@ -27,7 +27,6 @@ from tsbench.evaluations import aws
 from tsbench.evaluations.aws import default_session
 from tsbench.evaluations.tracking.job import Job, load_jobs_from_analysis
 from cli.evaluations._main import evaluations
-# from ._main import evaluations
 
 @evaluations.command(short_help="Download evaluations to your file system.")
 @click.option(
@@ -54,7 +53,8 @@ from cli.evaluations._main import evaluations
     type=bool,
     default=False,
     help=(
-        "Whether to download leaderboard"
+        "Whether to download leaderboard, just usefull for"
+        "models that store the leaderboard."
     ),
 )
 @click.option(
@@ -87,12 +87,11 @@ def download(
         print(f"Downloading data from experiment '{experiment}'...")
         analysis = aws.Analysis(experiment)
         other_jobs = analysis.other_jobs
-        jobs = load_jobs_from_analysis(analysis)
         process_map(
             partial(
                 _move_job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard
             ),
-            jobs,
+            load_jobs_from_analysis(analysis),
             chunksize=1,
         )
         # abnormal results

@@ -251,3 +251,22 @@ It mostly contains convenient note when development the package.
     ]
 }
 ```
+
+
+# Integrate Auto-PyTorch
+```bash
+cd thirdparty
+git clone git clone git@github.com:dengdifan/Auto-PyTorch.git
+cd Auto-PyTorch
+pip install -e .
+cd ..
+git clone https://github.com/dengdifan/ConfigSpace.git
+cd ConfigSpace
+pip install .
+cd thirdparty/Auto-PyTorch/autoPyTorch
+rm -rf automl_common
+git clone git@github.com:automl/automl_common.git
+cd automl_common
+pip install -e .
+pip install pytorch_forecasting
+```

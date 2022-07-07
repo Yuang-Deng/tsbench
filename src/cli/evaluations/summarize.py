@@ -97,5 +97,3 @@ def summarize(evaluations_path: Path, experiment: str, metric:str):
 
     res_df = res_df.loc[res_df.groupby(['dataset', 'model', 'seed']).val_loss.idxmin()]
     print(res_df.pivot_table(index='dataset', columns='model', values=metric).reindex(index_models, axis=1))
-
-# summarize()

@@ -1,4 +1,5 @@
-seeds: [42, 137, 69, 720, 24]
+# seeds: [42, 137, 69, 720, 24]
+seeds: [42]
 
 datasets:
   - covid_deaths
@@ -16,8 +17,8 @@ datasets:
 models:
   autogluon: 
     - key: presets
-      values: [good_quality]
+      values: [best_quality]
     - key: run_time
-      values: [36000]
+      values: [86400, 144000]
     - key: eval_metric
-      values: [mean_wQuantileLoss] # AVAILABLE_METRICS = ["MASE", "MAPE", "sMAPE", "mean_wQuantileLoss", "MSE", "RMSE"]
+      values: [MASE] # AVAILABLE_METRICS = ["MASE", "MAPE", "sMAPE", "mean_wQuantileLoss", "MSE", "RMSE"]

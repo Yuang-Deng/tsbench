@@ -40,6 +40,12 @@ model.tar.gz
 train_leaderboard.csv
 m5
 configs/benchmark/auto/
+tsf_data
+APT_run
+data_loader.py
+constant.py
+cache
+
 
 
 # Submodules

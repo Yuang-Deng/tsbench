@@ -87,11 +87,11 @@ class FitResult:
             eval_dir.mkdir(parents=True, exist_ok=True)
 
             prediction.save(eval_dir)
-            
             if not validation:
                 for metric, value in evaluation.summary.items():
                     log_metric(metric, value)
                 log_metric("latency", latency)
+                predictor.leaderboard(dataset)
             else:
                 for metric, value in evaluation.summary.items():
                     log_metric("val_" + metric, value)
