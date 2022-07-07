@@ -87,12 +87,11 @@ def download(
         print(f"Downloading data from experiment '{experiment}'...")
         analysis = aws.Analysis(experiment)
         other_jobs = analysis.other_jobs
-        jobs = load_jobs_from_analysis(analysis)
         process_map(
             partial(
                 _move_job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard
             ),
-            jobs,
+            load_jobs_from_analysis(analysis),
             chunksize=1,
         )
         # abnormal results
