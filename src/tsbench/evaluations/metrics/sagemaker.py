@@ -77,4 +77,4 @@ _FLOATING_POINT_REGEX = (
 
 
 def _metric_regex(target: str) -> str:
-    return f"gluonts\\[{target}\\]: {_FLOATING_POINT_REGEX}"
+    return f"tsbench\\[{target}\\]: {_FLOATING_POINT_REGEX}"

@@ -23,4 +23,4 @@ def log_metric(metric: str, value: Any) -> None:
     Logs the provided metric in the format `gluonts[<metric>]: <value>`.
     """
     # pylint: disable=logging-fstring-interpolation
-    logger.info(f"gluonts[{metric}]: {dump_code(value)}")
+    logger.info(f"tsbench[{metric}]: {dump_code(value)}")
