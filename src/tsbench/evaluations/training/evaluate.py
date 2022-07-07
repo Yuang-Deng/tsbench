@@ -91,6 +91,7 @@ class FitResult:
                 for metric, value in evaluation.summary.items():
                     log_metric(metric, value)
                 log_metric("latency", latency)
+                predictor.leaderboard(dataset)
             else:
                 for metric, value in evaluation.summary.items():
                     log_metric("val_" + metric, value)

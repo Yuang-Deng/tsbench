@@ -28,5 +28,16 @@ lightning_logs/
 # Autogluon
 AutogluonModels/
 
+# temp file
+temp*
+thirdparty
+tsf_data
+APT_run
+data_loader.py
+constant.py
+cache
+
+
+
 # Submodules
 vendor/

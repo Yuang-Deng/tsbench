@@ -27,7 +27,6 @@ from tsbench.evaluations import aws
 from tsbench.evaluations.aws import default_session
 from tsbench.evaluations.tracking.job import Job, load_jobs_from_analysis
 from cli.evaluations._main import evaluations
-# from ._main import evaluations
 
 @evaluations.command(short_help="Download evaluations to your file system.")
 @click.option(

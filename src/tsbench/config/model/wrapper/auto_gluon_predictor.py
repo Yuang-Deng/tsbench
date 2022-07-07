@@ -1,9 +1,10 @@
-import logging
 from typing import Iterator, Optional
 
 import json
 from pathlib import Path
 import os
+
+import warnings
 
 from gluonts.dataset.common import Dataset
 from gluonts.model.predictor import Predictor
@@ -45,12 +46,6 @@ class AutoGluonPredictor(Predictor):
         data_frame = TimeSeriesDataFrame(dataset)
         outputs = self.predictor.predict(data_frame)
 
-        # FIXME There are some problems with the use of this leaderboard data
-        model_path = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
-        leaderboard = self.predictor.leaderboard(data_frame)
-        leaderboard.to_csv(Path.joinpath(Path(model_path), 'leaderboard.csv'))
-        print('leaderboard has been saved at:', Path.joinpath(Path(model_path), 'leaderboard.csv'))
-
         metas = outputs.index.values
         cancat_len = outputs.shape[0]
         assert cancat_len % self.prediction_length == 0
@@ -67,6 +62,20 @@ class AutoGluonPredictor(Predictor):
                 freq=self.freq,
                 forecast_keys=colums,
                 item_id=meta[0][0])
+
+    def leaderboard(
+        self,
+        dataset: Dataset,
+        **kwargs,
+    ):
+        warnings.filterwarnings("ignore")
+        data_frame = TimeSeriesDataFrame(dataset)
+        # 116154 1990-01-31
+        # FIXME There are some problems with the use of this leaderboard data
+        model_path = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
+        leaderboard = self.predictor.leaderboard(data_frame)
+        leaderboard.to_csv(Path.joinpath(Path(model_path), 'leaderboard.csv'))
+        print('leaderboard has been saved at:', Path.joinpath(Path(model_path), 'leaderboard.csv'))
 
     def deserialize(cls, path: Path, **kwargs) -> "Predictor":
         predictor = TimeSeriesPredictor.load(cls, path)  # type: ignore
