@@ -70,8 +70,6 @@ class AutoGluonPredictor(Predictor):
     ):
         warnings.filterwarnings("ignore")
         data_frame = TimeSeriesDataFrame(dataset)
-        # 116154 1990-01-31
-        # FIXME There are some problems with the use of this leaderboard data
         model_path = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
         leaderboard = self.predictor.leaderboard(data_frame)
         leaderboard.to_csv(Path.joinpath(Path(model_path), 'leaderboard.csv'))
