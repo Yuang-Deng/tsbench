@@ -1,5 +1,5 @@
-# seeds: [42, 137, 69, 720, 24]
-seeds: [42]
+seeds: [42, 137, 69, 720, 24]
+# seeds: [42]
 
 datasets:
   - covid_deaths
@@ -13,6 +13,7 @@ datasets:
   - m3_monthly
   - nn5
   - electricity
+  - kdd_2018
 
 models:
   autogluon: 

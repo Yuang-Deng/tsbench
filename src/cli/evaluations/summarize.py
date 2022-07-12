@@ -23,9 +23,11 @@ BASELINES = ["arima", "ets", "prophet", "mqcnn"]
 
 METRICS = ["mase", "smape", "nrmse", "nd", "ncrps"]
 
-DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly", "m4_monthly", 
-    "m4_weekly", "m4_daily", "m4_hourly", "m4_yearly", "tourism_quarterly", "tourism_monthly", 
-    "dominick", "weather", "hospital", "covid_deaths", "electricity", "kdd_2018", "nn5", "rossmann", "solar", "taxi", "wiki"]
+# DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly", "m4_monthly", 
+#     "m4_weekly", "m4_daily", "m4_hourly", "m4_yearly", "tourism_quarterly", "tourism_monthly", 
+#     "dominick", "weather", "hospital", "covid_deaths", "electricity", "kdd_2018", "nn5", "rossmann", "solar", "taxi", "wiki"]
+
+DATASETS = ["covid_deaths", "m3_quarterly", "hospital", "tourism_quarterly", "m4_hourly", "m3_other", "tourism_monthly", "m4_weekly", "m3_monthly", "nn5", "electricity"]
 
 @evaluations.command(
     short_help="Visulize results as a table."

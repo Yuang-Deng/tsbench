@@ -187,7 +187,7 @@ class DatasetSplit:
             self._directory / "gluonts" / self._split, freq=self._metadata.freq
         )
 
-    def pandas(self) -> Dataset:
+    def numpy(self) -> np.ndarray:
         pass
 
     def evaluation(self) -> EvaluationDataset:
