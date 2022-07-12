@@ -15,10 +15,10 @@ try:
 except ImportError:
     TimeSeriesPredictor = None
 
-AUTOGLUON_IS_INSTALLED = TimeSeriesPredictor is not None
+AUTOPYTORCH_IS_INSTALLED = TimeSeriesPredictor is not None
 
 USAGE_MESSAGE = """
-Cannot import `autogluon`.
+Cannot import `autopytorch`.
 
 The `AutoGluonEstimator` is a thin wrapper for calling the `AutoGluon` package.
 """
@@ -28,7 +28,7 @@ class AutoGluonPredictor(Predictor):
     def __init__(self, model: TimeSeriesPredictor, prediction_length: int, freq: str, lead_time: int = 0) -> None:
         super().__init__(prediction_length, freq, lead_time)
 
-        if not AUTOGLUON_IS_INSTALLED:
+        if not AUTOPYTORCH_IS_INSTALLED:
             raise ImportError(USAGE_MESSAGE)
 
         self.prediction_length = prediction_length

@@ -13,14 +13,18 @@
 
 from __future__ import annotations
 import json
+from logging import warning
+import os
+import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import cast, Dict, Tuple, Union
+from typing import Any, cast, Dict, Tuple, Union, List
 import numpy as np
 import pandas as pd
 from gluonts.dataset.common import Dataset, FileDataset, MetaData
 from numpy import ma
+from traitlets import default
 from tsbench.constants import (
     DEFAULT_DATA_CATCH22_PATH,
     DEFAULT_DATA_PATH,
@@ -187,8 +191,37 @@ class DatasetSplit:
             self._directory / "gluonts" / self._split, freq=self._metadata.freq
         )
 
-    def numpy(self) -> np.ndarray:
-        pass
+    def format(self, format: str) -> Any:
+        func = getattr(self, format, None)
+        if func == None:
+            raise NotImplementedError
+        return func()
+
+    def list(self) -> List:
+        data = []
+        path = self._directory / "gluonts" / self._split
+        for dirname, _, filenames in os.walk(path):
+            for filename in filenames:
+                file = Path(dirname, filename)
+                with open(file, "r") as json_file:
+                    for line_number, raw in enumerate(json_file):
+                        line = json.loads(raw)
+                        data.append(line)
+        return data
+
+    def autopytorch(self) -> tuple[np.array, np.array]:
+        target = []
+        start = []
+        path = self._directory / "gluonts" / self._split
+        for dirname, _, filenames in os.walk(path):
+            for filename in filenames:
+                file = Path(dirname, filename)
+                with open(file, "r") as json_file:
+                    for line_number, raw in enumerate(json_file):
+                        line = json.loads(raw)
+                        target.append(line["target"])
+                        start.append(pd.Timestamp(line["start"]))
+        return np.array(target), np.array(start)
 
     def evaluation(self) -> EvaluationDataset:
         """

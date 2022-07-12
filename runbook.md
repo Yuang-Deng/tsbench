@@ -37,6 +37,12 @@ Attach the IAM role `SagemakerAdmin` to the instance. One could do so by doing:
 
 Actions -> Security ->  Modify IAM role -> Select `SagemakerAdmin` -> Update IAM role.
 
+Check if an instance profile arn is created for the SageMakerAdmin role in IAM.
+If not, create it manually by using aws cli command:
+```bash
+aws iam create-instance-profile --instance-profile-name SagemakerAdmin
+aws iam add-role-to-instance-profile --instance-profile-name SagemakerAdmin --role-name SagemakerAdmin
+```
 
 ### Config AWS CLI
 Before run schedule, we must config the aws cli (only region is needed, they others can be left empty).
@@ -53,6 +59,7 @@ Default output format [None]: json
 ### Clone the package
 ```bash
 git clone https://github.com/Yuang-Deng/tsbench.git
+cd tsbench
 git checkout autogluon_dev
 ```
 
@@ -253,7 +260,7 @@ It mostly contains convenient note when development the package.
 ```
 
 
-# Integrate Auto-PyTorch
+# Integrate Auto-PyTorch (developing)
 ```bash
 cd thirdparty
 git clone git clone git@github.com:dengdifan/Auto-PyTorch.git

@@ -47,5 +47,5 @@ def upload(path: str, bucket: str, prefix: str):
     s3 = default_session().client("s3")
     for config in tqdm(DATASET_REGISTRY.values()):
         upload_directory(
-            s3, path + '/' + config.name(), bucket, f"{prefix}/{config.name()}"
+            s3, str(path) + '/' + config.name(), bucket, f"{prefix}/{config.name()}"
         )

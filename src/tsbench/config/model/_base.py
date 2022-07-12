@@ -33,6 +33,8 @@ class ModelConfig:
     the `==` operator.
     """
 
+    
+
     @classmethod
     def name(cls) -> str:
         """
@@ -202,3 +204,12 @@ class TrainConfig:
             learning_rate=self.learning_rate,
             callbacks=callbacks,
         )
+
+
+# class TsbenchEstimator(Estimator):
+
+#     def train(self, training_data: Dataset, validation_data: Optional[Dataset] = None) -> Predictor:
+#         return super().train(training_data, validation_data)
+
+# class TsbenchPredictor(Predictor):
+#     pass

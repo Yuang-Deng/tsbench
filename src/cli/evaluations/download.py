@@ -73,8 +73,7 @@ def download(
 
     The evaluations are downloaded to the provided directory.
     """
-    target = Path(evaluations_path)
-    target = Path.joinpath(target, experiment)
+    target = Path(evaluations_path) / experiment  # type: ignore
     target.mkdir(parents=True, exist_ok=True)
 
     if experiment is None:

@@ -12,7 +12,7 @@
 # permissions and limitations under the License.
 
 from ._base import DatasetConfig, DatasetSplit, EvaluationDataset
-from ._factory import DATASET_REGISTRY, get_dataset_config, construct_pandas_frame_from_iterable_dataset
+from ._factory import DATASET_REGISTRY, get_dataset_config
 from .datasets import *
 
 __all__ = [
@@ -21,5 +21,4 @@ __all__ = [
     "EvaluationDataset",
     "DATASET_REGISTRY",
     "get_dataset_config",
-    "construct_pandas_frame_from_iterable_dataset",
 ]
