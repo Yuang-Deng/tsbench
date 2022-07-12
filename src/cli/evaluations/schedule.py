@@ -66,6 +66,12 @@ from ._main import evaluations
     help="The prefix for the S3 bucket where datasets have been uploaded to.",
 )
 @click.option(
+    "--source_bucket_prefix",
+    default="source",
+    show_default=True,
+    help="The prefix for the S3 bucket where source have been uploaded to.",
+)
+@click.option(
     "--output_bucket",
     default="tsbench",
     show_default=True,
@@ -132,6 +138,7 @@ def schedule(
     data_bucket_prefix: str,
     output_bucket: str,
     output_bucket_prefix: str,
+    source_bucket_prefix: str,
     instance_type: str,
     docker_image: str,
     max_runtime: int,
@@ -169,7 +176,6 @@ def schedule(
     all_configurations = generate_configurations(Path(config_path))
 
     # Then, we can run the training, passing parameters as required
-    source_bucket_prefix = "source"
     for configuration in iterate_configurations(all_configurations, nskip):
         # Create the estimator
         estimator = CustomFramework(
