@@ -54,9 +54,6 @@ def summarize(evaluations_path: Path, experiment: str, metric:str):
     results = []
     source = Path(evaluations_path) / experiment
 
-    for dirname, _, filenames in os.walk(source):
-        pass
-
     if Path.joinpath(source, experiment + '.csv').exists():
         print("load from csv file:", Path.joinpath(source, experiment + '.csv'))
         res_df = pd.read_csv(Path.joinpath(source, experiment + '.csv'))

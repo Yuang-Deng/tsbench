@@ -1,2 +1,4 @@
 from .auto_gluon_predictor import AutoGluonPredictor
 from .auto_gluon_estimater import AutoGluonEstimator
+from .auto_pytorch_estimater import AutoPytorchEstimator
+from .auto_pytorch_predictor import AutoPytorchPredictor

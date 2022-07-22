@@ -25,7 +25,6 @@ from pandas.tseries.frequencies import to_offset
 from tqdm.auto import tqdm
 from .quantile import QuantileForecasts
 
-
 def generate_forecasts(
     predictor: Predictor,
     dataset: Dataset,

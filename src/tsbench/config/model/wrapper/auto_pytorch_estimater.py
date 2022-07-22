@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 from mxnet.gluon import HybridBlock
 
@@ -9,14 +9,20 @@ from gluonts.dataset.common import Dataset
 from gluonts.model.estimator import Estimator
 from gluonts.model.predictor import Predictor
 from gluonts.transform import Transformation
+import numpy as np
+import os
+import copy
+import shutil
+from pathlib import Path
 
-from .auto_gluon_predictor import AutoGluonPredictor
+from .auto_pytorch_predictor import AutoPytorchPredictor
 try:
-    from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
+    from autoPyTorch.api.time_series_forecasting import TimeSeriesForecastingTask
+    from autoPyTorch.datasets.resampling_strategy import HoldoutValTypes
 except ImportError:
-    TimeSeriesPredictor = None
+    TimeSeriesForecastingTask = None
 
-AUTOGLUON_IS_INSTALLED = TimeSeriesPredictor is not None
+AUTOGLUON_IS_INSTALLED = TimeSeriesForecastingTask is not None
 
 USAGE_MESSAGE = """
 Cannot import `autogluon`.
@@ -24,7 +30,24 @@ Cannot import `autogluon`.
 The `AutoGluonEstimator` is a thin wrapper for calling the `AutoGluon` package.
 """
 
-class AutoGluonEstimator(Estimator):
+FREQ_MAP = {
+    "M": "1M",
+    "Y": "1Y",
+}
+
+FREQUENCY_MAP = {
+    "minutely": "1min",
+    "10_minutes": "10min",
+    "half_hourly": "30min",
+    "hourly": "1H",
+    "daily": "1D",
+    "weekly": "1W",
+    "monthly": "1M",
+    "quarterly": "1Q",
+    "yearly": "1Y"
+}
+
+class AutoPytorchEstimator(Estimator):
     """
     Wrapper around `Autogluon <https://github.com/awslabs/autogluon>`_.
 
@@ -49,6 +72,7 @@ class AutoGluonEstimator(Estimator):
         self,
         freq: str,
         prediction_length: int,
+        budget_type: str,
         run_time: int,
         eval_metric: str,
         presets: Optional[str],
@@ -60,27 +84,33 @@ class AutoGluonEstimator(Estimator):
 
         self.freq = freq
         self.prediction_length = prediction_length
-        self.autogluonts = TimeSeriesPredictor(prediction_length=prediction_length, eval_metric=eval_metric)
-        self.presets = presets
+        self.budget_type = budget_type
         self.run_time = run_time
 
-    def train_model(
-        self,
-        training_data: Dataset,
-        validation_data: Optional[Dataset] = None,
-        num_workers: Optional[int] = None,
-        num_prefetch: Optional[int] = None,
-        shuffle_buffer_length: Optional[int] = None,
-        cache_data: bool = False,
-    ) -> AutoGluonPredictor:
+        working_dir = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
+        path = Path(working_dir) / 'APT_run'
+        path_log = str(path / "m3_monthly" / budget_type / f'{10}' / "log")
+        path_pred = str(path / "m3_monthly" / budget_type / f'{10}' / "output")
 
-        train_dataframe = TimeSeriesDataFrame(training_data)
-        valid_dataframe = TimeSeriesDataFrame(validation_data)
-
-        tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=self.run_time)
-        
-        return AutoGluonPredictor(tspredictor, prediction_length=self.prediction_length, freq=self.freq)
-
+        resampling_strategy = HoldoutValTypes.time_series_hold_out_validation
+        resampling_strategy_args = None
+        # Remove intermediate files
+        try:
+            shutil.rmtree(path_log)
+            shutil.rmtree(path_pred)
+        except OSError as e:
+            print("Error: %s - %s." % (e.filename, e.strerror))
+        self.autopytorchts = TimeSeriesForecastingTask(
+            seed=10,
+            ensemble_size=20,
+            resampling_strategy=resampling_strategy,
+            resampling_strategy_args=resampling_strategy_args,
+            temporary_directory=path_log,
+            output_directory=path_pred,
+        )
+        self.autopytorchts.set_pipeline_config(device="cpu",
+                                torch_num_threads=8,
+                                early_stopping=20)
         
     def train(
         self,
@@ -91,17 +121,56 @@ class AutoGluonEstimator(Estimator):
         shuffle_buffer_length: Optional[int] = None,
         cache_data: bool = False,
         **kwargs,
-    ) -> AutoGluonPredictor:
-        return self.train_model(
-            training_data=training_data,
-            validation_data=validation_data,
-            num_workers=num_workers,
-            num_prefetch=num_prefetch,
-            shuffle_buffer_length=shuffle_buffer_length,
-            cache_data=cache_data,
+    ) -> AutoPytorchPredictor:
+        # train_target, train_start = self._data_process(training_data)
+        val_target, val_start = self._data_process(validation_data)
+
+        if self.budget_type == "random_search":
+            budget_kwargs = {'budget_type': 'random_search',
+                            'max_budget': None,
+                            'min_budget': None}
+
+        elif self.budget_type != 'full_budget':
+            from autoPyTorch.constants_forecasting import FORECASTING_BUDGET_TYPE
+            if self.budget_type not in FORECASTING_BUDGET_TYPE and self.budget_type != 'epochs':
+                raise NotImplementedError('Unknown Budget Type!')
+            budget_kwargs = {'budget_type': self.budget_type,
+                            'max_budget': 50 if self.budget_type == 'epochs' else 1.0,
+                            'min_budget': 5 if self.budget_type == 'epochs' else 0.1}
+        else:
+            budget_kwargs = {'budget_type': 'epochs',
+                            'max_budget': 50,
+                            'min_budget': 50}
+
+        self.autopytorchts.search(
+            X_train=None,
+            # TODO why copy
+            y_train=copy.deepcopy(val_target),
+            optimize_metric='mean_MASE_forecasting',
+            n_prediction_steps=self.prediction_length,
+            **budget_kwargs,
+            freq=FREQ_MAP[self.freq],
+            start_times_train=val_start,
+            memory_limit=32 * 1024,
+            normalize_y=False,
+            total_walltime_limit=self.run_time,
+            min_num_test_instances=1000,
         )
+
+        refit_dataset = self.autopytorchts.dataset.create_refit_set()
+        try:
+            self.autopytorchts.refit(refit_dataset, 0)
+        except Exception as e:
+            print(e)
+
+        return AutoPytorchPredictor(self.autopytorchts, prediction_length=self.prediction_length, freq=self.freq)
+
+    def _data_process(self, dataset: Dataset) -> Tuple[np.array, List]:
+        target = np.array([item["target"] for item in dataset])
+        start = [item["start"] for item in dataset]
+        return target, start
 
     def create_predictor(
         self, transformation: Transformation, trained_network: HybridBlock
     ) -> Predictor:
-        return AutoGluonPredictor(self.autogluonts, prediction_length=self.prediction_length, freq=self.freq)
+        return AutoPytorchEstimator(self.autopytorchts, prediction_length=self.prediction_length, freq=self.freq)

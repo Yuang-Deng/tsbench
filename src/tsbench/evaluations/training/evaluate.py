@@ -60,10 +60,10 @@ class FitResult:
             # pylint: disable=invalid-unary-operand-type
             dataset = [
                 {**item, "target": item["target"][-length:]}
-                for item in dataset_split.gluonts()
+                for item in dataset_split.list()
             ]
         else:
-            dataset = dataset_split.gluonts()
+            dataset = dataset_split.list()
 
         for i, predictor in enumerate(self.predictors):
             logging.info(

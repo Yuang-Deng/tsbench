@@ -30,6 +30,7 @@ from gluonts.model.tft import TemporalFusionTransformerEstimator
 from gluonts.mx.trainer.callback import Callback
 from gluonts.time_feature import Constant
 from tsbench.config.model.wrapper.auto_gluon_estimater import AutoGluonEstimator
+from tsbench.config.model.wrapper.auto_pytorch_estimater import AutoPytorchEstimator
 from mxnet.gluon import nn
 from tsbench.config.dataset import DatasetConfig
 from tsbench.config.dataset.datasets import WindFarmsDatasetConfig
@@ -566,7 +567,7 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
         return "autogluon"
 
     def create_predictor(self, estimator: Estimator, network: nn.HybridBlock) -> Predictor:
-        return self.create_predictor(estimator, network)
+        return estimator.create_predictor(estimator, network)
 
     def create_estimator(
         self,
@@ -580,6 +581,42 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
         return AutoGluonEstimator(
             freq=freq,
             prediction_length=prediction_length,
+            presets=self.presets,
+            run_time=self.run_time,
+            eval_metric=self.eval_metric,
+        )
+
+@register_model
+@dataclass(frozen=True)
+class AutoPytorchModelConfig(ModelConfig, TrainConfig):
+    """
+    The ETS estimator config.
+    """
+
+    presets: str = "default"
+    run_time: int = 1 * 60 * 60
+    eval_metric: str = "mean_wQuantileLoss"
+
+    @classmethod
+    def name(cls) -> str:
+        return "autopytorch"
+
+    def create_predictor(self, estimator: Estimator, network: nn.HybridBlock) -> Predictor:
+        return estimator.create_predictor(estimator, network)
+
+    def create_estimator(
+        self,
+        freq: str,
+        prediction_length: int,
+        time_features: bool,
+        training_time: float,
+        validation_milestones: List[float],
+        callbacks: List[Callback],
+    ) -> Estimator:
+        return AutoPytorchEstimator(
+            freq=freq,
+            prediction_length=prediction_length,
+            budget_type='epochs',
             presets=self.presets,
             run_time=self.run_time,
             eval_metric=self.eval_metric,

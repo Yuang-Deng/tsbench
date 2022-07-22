@@ -198,18 +198,19 @@ class DatasetSplit:
         return func()
 
     def list(self) -> List:
-        data = []
-        path = self._directory / "gluonts" / self._split
-        for dirname, _, filenames in os.walk(path):
-            for filename in filenames:
-                file = Path(dirname, filename)
-                with open(file, "r") as json_file:
-                    for line_number, raw in enumerate(json_file):
-                        line = json.loads(raw)
-                        data.append(line)
-        return data
+        dataset = FileDataset(
+            self._directory / "gluonts" / self._split, freq=self._metadata.freq
+        )
+        dataset = [
+            {**item, "target": item["target"], "datetime": pd.date_range(
+                    item["start"], periods=len(item["target"]), freq=self._metadata.freq
+                ),
+                "id": [item['item_id']] * len(item["target"])}
+            for item in dataset
+        ]
+        return dataset
 
-    def autopytorch(self) -> tuple[np.array, np.array]:
+    def autopytorch(self) -> Tuple[np.array, np.array]:
         target = []
         start = []
         path = self._directory / "gluonts" / self._split

@@ -19,6 +19,7 @@ import click
 import mxnet as mx
 import numpy as np
 from gluonts.env import env
+import torch
 from tsbench.config import DATASET_REGISTRY, MODEL_REGISTRY, TrainConfig
 from tsbench.config.dataset import get_dataset_config
 from tsbench.config.model import get_model_config
@@ -106,6 +107,7 @@ from tsbench.evaluations.training import fit_estimator
 @click.option("--autogluon_presets", default=None, show_default=True)
 @click.option("--autogluon_run_time", default=1*60*60*10, show_default=True)
 @click.option("--autogluon_eval_metric", default='mean_wQuantileLoss', show_default=True)
+@click.option("--autopytorch_run_time", default=1*60*60*10, show_default=True)
 def main(
     dataset: str,
     model: str,

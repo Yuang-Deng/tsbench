@@ -11,11 +11,16 @@ from gluonts.model.predictor import Predictor
 from gluonts.model.forecast import QuantileForecast
 
 try:
+    from autoPyTorch.api.time_series_forecasting import TimeSeriesForecastingTask
+except ImportError:
+    TimeSeriesForecastingTask = None
+
+try:
     from autogluon.timeseries import TimeSeriesPredictor, TimeSeriesDataFrame
 except ImportError:
     TimeSeriesPredictor = None
 
-AUTOPYTORCH_IS_INSTALLED = TimeSeriesPredictor is not None
+AUTOPYTORCH_IS_INSTALLED = TimeSeriesForecastingTask is not None
 
 USAGE_MESSAGE = """
 Cannot import `autopytorch`.
@@ -23,9 +28,9 @@ Cannot import `autopytorch`.
 The `AutoGluonEstimator` is a thin wrapper for calling the `AutoGluon` package.
 """
 
-class AutoGluonPredictor(Predictor):
+class AutoPytorchPredictor(Predictor):
 
-    def __init__(self, model: TimeSeriesPredictor, prediction_length: int, freq: str, lead_time: int = 0) -> None:
+    def __init__(self, model: TimeSeriesForecastingTask, prediction_length: int, freq: str, lead_time: int = 0) -> None:
         super().__init__(prediction_length, freq, lead_time)
 
         if not AUTOPYTORCH_IS_INSTALLED:
@@ -43,49 +48,29 @@ class AutoGluonPredictor(Predictor):
         num_prefetch: Optional[int] = None,
         **kwargs,
     ) -> Iterator[QuantileForecast]:
+
         data_frame = TimeSeriesDataFrame(dataset)
-        outputs = self.predictor.predict(data_frame)
 
-        metas = outputs.index.values
-        cancat_len = outputs.shape[0]
-        assert cancat_len % self.prediction_length == 0
-        ts_num = cancat_len // self.prediction_length
+        test_sets = self.predictor.dataset.generate_test_seqs()
+        try:
+            pred = self.predictor.predict(test_sets)
+        except Exception as e:
+            print(e)
+            exit()
 
-        # resault wraper
-        colums = outputs.columns[1:]
-        for i in range(ts_num):
-            cur_val = outputs.values[i * self.prediction_length : (i + 1) * self.prediction_length, 1:].T
-            meta = metas[i * self.prediction_length : (i + 1) * self.prediction_length]
-            yield QuantileForecast(
-                forecast_arrays=cur_val,
-                start_date=meta[0][1],
-                freq=self.freq,
-                forecast_keys=colums,
-                item_id=meta[0][0])
-
-    def leaderboard(
-        self,
-        dataset: Dataset,
-        **kwargs,
-    ):
-        warnings.filterwarnings("ignore")
-        data_frame = TimeSeriesDataFrame(dataset)
-        model_path = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
-        leaderboard = self.predictor.leaderboard(data_frame)
-        leaderboard.to_csv(Path.joinpath(Path(model_path), 'leaderboard.csv'))
-        print('leaderboard has been saved at:', Path.joinpath(Path(model_path), 'leaderboard.csv'))
+        print()
 
     def deserialize(cls, path: Path, **kwargs) -> "Predictor":
-        predictor = TimeSeriesPredictor.load(cls, path)  # type: ignore
+        # predictor = TimeSeriesForecastingTask.load(cls, path)  # type: ignore
         file = path / "metadata.pickle"
         with file.open("r") as f:
             meta = json.load(f)
-        return AutoGluonPredictor(model=predictor,
+        return AutoPytorchPredictor(model=None,
             freq=meta["freq"], prediction_length=meta["prediction_length"]
         )
 
     def serialize(self, path: Path) -> None:
-        self.predictor.save()
+        # self.predictor.save()
         file = path / "metadata.pickle"
         with file.open("w") as f:
             json.dump(

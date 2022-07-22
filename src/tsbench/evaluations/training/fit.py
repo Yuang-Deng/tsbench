@@ -24,7 +24,7 @@ from tsbench.gluonts.callbacks import (
     ModelSaverCallback,
     ParameterCountCallback,
 )
-from tsbench.config.model import AutoGluonModelConfig
+from tsbench.config.model import AutoGluonModelConfig, AutoPytorchModelConfig
 from .evaluate import FitResult
 from .logging import log_metric
 
@@ -36,6 +36,7 @@ def fit_estimator(  # pylint: disable=too-many-statements
     num_model_checkpoints: int = 5,
     validate: bool = False,
     verbose: bool = True,
+    data_format: str = 'gluonts',
 ) -> FitResult:
     """
     Fits the given estimator using the provided training dataset.
@@ -109,10 +110,10 @@ def fit_estimator(  # pylint: disable=too-many-statements
         # Afterwards, we run the training. First, we need to optionally add validation data.
         train_kwargs = {}
         if isinstance(config, TrainConfig) and validate:
-            train_kwargs["validation_data"] = dataset.data.val().gluonts()
+            train_kwargs["validation_data"] = dataset.data.val().list()
 
         # Then, we can obtain the predictor
-        train_data = dataset.data.train(validate).gluonts()
+        train_data = dataset.data.train(validate).list()
         predictor = estimator.train(train_data, **train_kwargs)
 
         # If the model is not trainable, we can return already, logging the recorded time
@@ -123,9 +124,9 @@ def fit_estimator(  # pylint: disable=too-many-statements
                 log_metric("training_time", 0)
             return FitResult(config, [predictor], [0.0], 0)
 
-        # TODO the autogluon can not add callback functions, it just return in there, 
+        # TODO the autogluon and autopytorch can not add callback functions, it just return in there, 
         # this problem will be solved later
-        if isinstance(config, AutoGluonModelConfig):
+        if isinstance(config, AutoGluonModelConfig) or isinstance(config, AutoPytorchModelConfig):
             return FitResult(config, [predictor], [0.0], 0)
 
         # Otherwise, we need to load all models that were stored by the callback
