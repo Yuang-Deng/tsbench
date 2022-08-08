@@ -24,7 +24,6 @@ import numpy as np
 import pandas as pd
 from gluonts.dataset.common import Dataset, FileDataset, MetaData
 from numpy import ma
-from traitlets import default
 from tsbench.constants import (
     DEFAULT_DATA_CATCH22_PATH,
     DEFAULT_DATA_PATH,
@@ -205,7 +204,7 @@ class DatasetSplit:
             {**item, "target": item["target"], "datetime": pd.date_range(
                     item["start"], periods=len(item["target"]), freq=self._metadata.freq
                 ),
-                "id": [item['item_id']] * len(item["target"])}
+                "id": [item["item_id"]] * len(item["target"])}
             for item in dataset
         ]
         return dataset

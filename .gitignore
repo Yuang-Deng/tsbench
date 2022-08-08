@@ -46,6 +46,9 @@ data_loader.py
 constant.py
 cache
 current_model_template_categories_1.json
+data.json
+nn5.json
+temp.txt
 
 
 

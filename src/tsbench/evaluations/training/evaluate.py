@@ -89,7 +89,9 @@ class FitResult:
             prediction.save(eval_dir)
             if not validation:
                 for metric, value in evaluation.summary.items():
+                    # TODO the output of log_metric can not be printed in terminal 
                     log_metric(metric, value)
+                    print(f"tsbench[{metric}]: {value}")
                 log_metric("latency", latency)
                 # TODO use a more general way to do this
                 if hasattr(predictor, "leaderboard"): 
@@ -97,6 +99,7 @@ class FitResult:
             else:
                 for metric, value in evaluation.summary.items():
                     log_metric("val_" + metric, value)
+                    print(f"val_tsbench[{metric}]: {value}")
                 log_metric("val_latency", latency)
 
     def serialize_predictors(self, directory: Path) -> None:

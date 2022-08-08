@@ -10,6 +10,7 @@ from gluonts.model.estimator import Estimator
 from gluonts.model.predictor import Predictor
 from gluonts.transform import Transformation
 import numpy as np
+import time
 import os
 import copy
 import shutil
@@ -22,29 +23,25 @@ try:
 except ImportError:
     TimeSeriesForecastingTask = None
 
-AUTOGLUON_IS_INSTALLED = TimeSeriesForecastingTask is not None
+AUTOPYTORCH_IS_INSTALLED = TimeSeriesForecastingTask is not None
 
 USAGE_MESSAGE = """
-Cannot import `autogluon`.
+Cannot import `autopytorch`.
 
-The `AutoGluonEstimator` is a thin wrapper for calling the `AutoGluon` package.
+The `AutoPytorchEstimator` is a thin wrapper for calling the `AutoPytorch` package.
 """
 
 FREQ_MAP = {
     "M": "1M",
     "Y": "1Y",
-}
-
-FREQUENCY_MAP = {
-    "minutely": "1min",
-    "10_minutes": "10min",
-    "half_hourly": "30min",
-    "hourly": "1H",
-    "daily": "1D",
-    "weekly": "1W",
-    "monthly": "1M",
-    "quarterly": "1Q",
-    "yearly": "1Y"
+    "Q": "1Q",
+    "D": "1D",
+    "W": "1W",
+    "H": "1H",
+    "1H": "1H",
+    "1min": "1min",
+    "10min": "10min",
+    "30min": "30min"
 }
 
 class AutoPytorchEstimator(Estimator):
@@ -79,7 +76,7 @@ class AutoPytorchEstimator(Estimator):
     ) -> None:
         super().__init__(freq=freq, prediction_length=prediction_length)
 
-        if not AUTOGLUON_IS_INSTALLED:
+        if not AUTOPYTORCH_IS_INSTALLED:
             raise ImportError(USAGE_MESSAGE)
 
         self.freq = freq
@@ -89,8 +86,10 @@ class AutoPytorchEstimator(Estimator):
 
         working_dir = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
         path = Path(working_dir) / 'APT_run'
-        path_log = str(path / "m3_monthly" / budget_type / f'{10}' / "log")
-        path_pred = str(path / "m3_monthly" / budget_type / f'{10}' / "output")
+        now = time.strftime("%Y-%m-%d-%H_%M_%S",time.localtime(time.time())) 
+        path_log = str(path / "m3_monthly" / str(now) / budget_type / f'{10}' / "log")
+        path_pred = str(path / "m3_monthly" / str(now) / budget_type / f'{10}' / "output")
+        
 
         resampling_strategy = HoldoutValTypes.time_series_hold_out_validation
         resampling_strategy_args = None
@@ -98,6 +97,8 @@ class AutoPytorchEstimator(Estimator):
         try:
             shutil.rmtree(path_log)
             shutil.rmtree(path_pred)
+            Path(path_log).mkdir(parents=True, exist_ok=True)
+            Path(path_pred).mkdir(parents=True, exist_ok=True)
         except OSError as e:
             print("Error: %s - %s." % (e.filename, e.strerror))
         self.autopytorchts = TimeSeriesForecastingTask(
@@ -108,7 +109,7 @@ class AutoPytorchEstimator(Estimator):
             temporary_directory=path_log,
             output_directory=path_pred,
         )
-        self.autopytorchts.set_pipeline_config(device="cpu",
+        self.autopytorchts.set_pipeline_config(device="cuda",
                                 torch_num_threads=8,
                                 early_stopping=20)
         
@@ -157,12 +158,13 @@ class AutoPytorchEstimator(Estimator):
             min_num_test_instances=1000,
         )
 
-        refit_dataset = self.autopytorchts.dataset.create_refit_set()
-        try:
-            self.autopytorchts.refit(refit_dataset, 0)
-        except Exception as e:
-            print(e)
+        # refit_dataset = self.autopytorchts.dataset.create_refit_set()
+        # try:
+        #     self.autopytorchts.refit(refit_dataset, 0)
+        # except Exception as e:
+        #     print(e)
 
+        print("autopytorch runtime:", self.run_time)
         return AutoPytorchPredictor(self.autopytorchts, prediction_length=self.prediction_length, freq=self.freq)
 
     def _data_process(self, dataset: Dataset) -> Tuple[np.array, List]:

@@ -64,6 +64,10 @@ def metric_definitions() -> List[Dict[str, str]]:
             "Name": "autogluon_traing_time",
             "Regex": f"Total runtime: {_FLOATING_POINT_REGEX}"
         },
+        {
+            "Name": "autopytorch_traing_time",
+            "Regex": f"autopytorch runtime: {_FLOATING_POINT_REGEX}"
+        },
 
     ]
     return scalar_metrics + list_metrics + custimze_metrics

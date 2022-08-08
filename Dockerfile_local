@@ -13,7 +13,11 @@ RUN cd /dependencies \
     && poetry install --no-dev --no-root --no-interaction --no-ansi
 
 # install autogluon with locally code
-RUN pip uninstall autogluon -y
-COPY thirdparty/autogluon /dependencies/autogluon/
-WORKDIR /dependencies/autogluon/
-RUN ./full_install.sh
+# RUN pip uninstall autogluon -y
+COPY thirdparty/ConfigSpace2 /dependencies/ConfigSpace/
+COPY thirdparty/Auto-PyTorch /dependencies/Auto-PyTorch/
+WORKDIR /dependencies/ConfigSpace/
+RUN pip install -e .
+WORKDIR /dependencies/Auto-PyTorch/
+RUN pip install -e .
+RUN pip install pytorch_forecasting

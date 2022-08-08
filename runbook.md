@@ -44,17 +44,6 @@ aws iam create-instance-profile --instance-profile-name SagemakerAdmin
 aws iam add-role-to-instance-profile --instance-profile-name SagemakerAdmin --role-name SagemakerAdmin
 ```
 
-### Config AWS CLI
-Before run schedule, we must config the aws cli (only region is needed, they others can be left empty).
-
-```bash
-aws configure 
-AWS Access Key ID [None]: 
-AWS Secret Access Key [None]:
-Default region name [None]: us-west-2
-Default output format [None]: json
-```
-
 ## Install
 ### Clone the package
 ```bash
@@ -69,6 +58,17 @@ git checkout autogluon_dev
 ```bash
 bash bin/setup-ec2.sh
 source $HOME/.poetry/env
+```
+
+### Config AWS CLI
+Before run schedule, we must config the aws cli (only region is needed, they others can be left empty).
+
+```bash
+aws configure 
+AWS Access Key ID [None]: 
+AWS Secret Access Key [None]:
+Default region name [None]: us-west-2
+Default output format [None]: json
 ```
 
 ### Install python virtual environment through `poetry`
