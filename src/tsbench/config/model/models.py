@@ -593,9 +593,9 @@ class AutoPytorchModelConfig(ModelConfig, TrainConfig):
     The ETS estimator config.
     """
 
-    presets: str = "default"
     run_time: int = 1 * 60 * 60
-    eval_metric: str = "mean_wQuantileLoss"
+    optimize_metric: str = "mean_MASE_forecasting"
+    seed: int = 10
 
     @classmethod
     def name(cls) -> str:
@@ -617,7 +617,7 @@ class AutoPytorchModelConfig(ModelConfig, TrainConfig):
             freq=freq,
             prediction_length=prediction_length,
             budget_type='epochs',
-            presets=self.presets,
             run_time=self.run_time,
-            eval_metric=self.eval_metric,
+            seed=self.seed,
+            optimize_metric=self.optimize_metric,
         )

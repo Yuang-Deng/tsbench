@@ -106,8 +106,9 @@ from tsbench.evaluations.training import fit_estimator
 @click.option("--nbeats_num_blocks", default=1, show_default=True)
 @click.option("--autogluon_presets", default=None, show_default=True)
 @click.option("--autogluon_run_time", default=1*60*60*10, show_default=True)
-@click.option("--autogluon_eval_metric", default='mean_wQuantileLoss', show_default=True)
+@click.option("--autogluon_eval_metric", default="mean_wQuantileLoss", show_default=True)
 @click.option("--autopytorch_run_time", default=1*60*60*10, show_default=True)
+@click.option("--autopytorch_optimize_metric", default="mean_MASE_forecasting", show_default=True)
 def main(
     dataset: str,
     model: str,
@@ -138,6 +139,7 @@ def main(
     if seed is not None:
         np.random.seed(seed)
         mx.random.seed(seed)
+        kwargs[model + "_seed"] = seed
 
     # Initialize data and model
     data = get_dataset_config(dataset, data_path)

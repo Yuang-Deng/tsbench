@@ -2,24 +2,22 @@ seeds: [42]
 
 datasets:
   # - covid_deaths
-  # - m3_quarterly
   # - hospital
+  # - m3_quarterly
   # - tourism_quarterly
-  - m4_hourly
+  # - m4_hourly
   # - m3_other
   # - tourism_monthly
   # - m4_weekly
   # - m3_monthly
   # - nn5
-  # - electricity
+  - electricity
 
 models:
   autopytorch: 
-    # - key: presets
-    #   values: [medium_quality]
     - key: run_time
       # values: [43200]
-      values: [3600, 7200, 10800, 14400, 18000, 36000]
-      # values: [600]
-    # - key: eval_metric
-    #   values: [mean_wQuantileLoss] # AVAILABLE_METRICS = ["MASE", "MAPE", "sMAPE", "mean_wQuantileLoss", "MSE", "RMSE"]
+      # values: [3600, 7200, 10800, 14400, 18000, 36000]
+      values: [3600, 7200, 36000, 72000]
+    - key: optimize_metric
+      values: [mean_MASE_forecasting] # AVAILABLE_METRICS = ["mean_MASE_forecasting", "median_MASE_forecasting", "mean_MAE_forecasting", "median_MAE_forecasting", "mean_MAPE_forecasting", "median_MAPE_forecasting", "mean_MSE_forecasting", "median_MSE_forecasting"]
