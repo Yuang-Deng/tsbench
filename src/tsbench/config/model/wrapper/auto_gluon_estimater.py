@@ -63,24 +63,6 @@ class AutoGluonEstimator(Estimator):
         self.autogluonts = TimeSeriesPredictor(prediction_length=prediction_length, eval_metric=eval_metric)
         self.presets = presets
         self.run_time = run_time
-
-    def train_model(
-        self,
-        training_data: Dataset,
-        validation_data: Optional[Dataset] = None,
-        num_workers: Optional[int] = None,
-        num_prefetch: Optional[int] = None,
-        shuffle_buffer_length: Optional[int] = None,
-        cache_data: bool = False,
-    ) -> AutoGluonPredictor:
-
-        train_dataframe = TimeSeriesDataFrame(training_data)
-        valid_dataframe = TimeSeriesDataFrame(validation_data)
-
-        tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=self.run_time)
-        
-        return AutoGluonPredictor(tspredictor, prediction_length=self.prediction_length, freq=self.freq)
-
         
     def train(
         self,
@@ -92,16 +74,15 @@ class AutoGluonEstimator(Estimator):
         cache_data: bool = False,
         **kwargs,
     ) -> AutoGluonPredictor:
-        return self.train_model(
-            training_data=training_data,
-            validation_data=validation_data,
-            num_workers=num_workers,
-            num_prefetch=num_prefetch,
-            shuffle_buffer_length=shuffle_buffer_length,
-            cache_data=cache_data,
-        )
+
+        train_dataframe = TimeSeriesDataFrame(training_data)
+        valid_dataframe = TimeSeriesDataFrame(validation_data)
+
+        tspredictor = self.autogluonts.fit(train_dataframe, tuning_data=valid_dataframe, presets=self.presets, time_limit=self.run_time)
+        
+        return AutoGluonPredictor(tspredictor, prediction_length=self.prediction_length, freq=self.freq)
 
     def create_predictor(
-        self, transformation: Transformation, trained_network: HybridBlock
+        self,
     ) -> Predictor:
         return AutoGluonPredictor(self.autogluonts, prediction_length=self.prediction_length, freq=self.freq)

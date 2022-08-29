@@ -50,6 +50,11 @@ data.json
 nn5.json
 temp.txt
 thirdparty-old/
+tsbench-autopytorch-exp4.csv
+tsbench-autopytorch-exp4.zip
+tsbench-autopytorch-exp4/
+tsbench-autopytorch-exp4group.csv
+tsbench-autopytorch-exp4out.csv
 
 
 

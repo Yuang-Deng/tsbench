@@ -41,6 +41,7 @@ class AutoPytorchPredictor(Predictor):
         num_prefetch: Optional[int] = None,
         **kwargs,
     ) -> Iterator[SampleForecast]:
+        predict_ts = []
         for ds in dataset:
             ts = TimeSeriesSequence(
                 X=None,
@@ -51,10 +52,13 @@ class AutoPytorchPredictor(Predictor):
                 train_transforms=self.predictor.dataset.train_transform,
                 val_transforms=self.predictor.dataset.val_transform,
                 n_prediction_steps=self.prediction_length,
-                sp=self.predictor.dataset.seasonality,)
-            pred = self.predictor.predict([ts])
+                sp=self.predictor.dataset.seasonality,
+                is_test_set=True)
+            predict_ts.append(ts)
+        pred = self.predictor.predict(predict_ts)
+        for p, ds in zip(pred, dataset):
             yield SampleForecast(
-                samples=pred,
+                samples=p[:, None],
                 start_date=ds["start"],
                 freq=self.freq,
                 item_id=ds["item_id"],

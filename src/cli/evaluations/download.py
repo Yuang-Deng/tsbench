@@ -73,16 +73,17 @@ def download(
 
     The evaluations are downloaded to the provided directory.
     """
-    target = Path(evaluations_path) / experiment  # type: ignore
-    target.mkdir(parents=True, exist_ok=True)
-
     if experiment is None:
+        target = Path(evaluations_path)  # type: ignore
+        target.mkdir(parents=True, exist_ok=True)
         print("Downloading publicly available evaluations...")
         _download_public_evaluations(
             include_forecasts=include_forecasts, evaluations_path=target
         )
         other_jobs = []
     else:
+        target = Path(evaluations_path) / experiment
+        target.mkdir(parents=True, exist_ok=True)
         print(f"Downloading data from experiment '{experiment}'...")
         analysis = aws.Analysis(experiment)
         other_jobs = analysis.other_jobs

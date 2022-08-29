@@ -1,23 +1,61 @@
-seeds: [42]
+seeds: [42, 137, 69, 720, 24]
 
 datasets:
-  - covid_deaths
-  - m3_quarterly
-  - hospital
-  - tourism_quarterly
-  - m4_hourly
-  - m3_other
-  - tourism_monthly
-  - m4_weekly
-  - m3_monthly
-  - nn5
+  # - covid_deaths
+  # - m3_quarterly
+  # - hospital
+  # - tourism_quarterly
+  # - m4_hourly
+  # - m3_other
+  # - tourism_monthly
+  # - m4_weekly
+  # - m3_monthly
+  # - nn5
+  # - electricity
+
   - electricity
+  # - solar
+  - wiki
+  - m3_monthly
+  - m3_quarterly
+  - m3_yearly
+  - m3_other
+  - m4_hourly
+  - m4_daily
+  - m4_weekly
+  - m4_monthly
+  - m4_quarterly
+  - m4_yearly
+  - tourism_monthly
+  - tourism_quarterly
+  - tourism_yearly
+  - nn5
+  # - london_smart_meters
+  # - wind_farms
+  - car_parts
+  - dominick
+  - fred_md
+  - san_francisco_traffic
+  - pedestrian_count
+  - hospital
+  - covid_deaths
+  - kdd_2018
+  # - cif_2016
+  - australian_electricity_demand
+  # - bitcoin
+  - rideshare
+  - vehicle_trips
+  # - weather
+  - temperature_rain
+  # - m1_yearly
+  # - m1_quarterly
+  # - m1_monthly
 
 models:
   autogluon: 
     - key: presets
       values: [medium_quality]
     - key: run_time
-      values: [30]
+      values: [36000]
     - key: eval_metric
       values: [mean_wQuantileLoss] # AVAILABLE_METRICS = ["MASE", "MAPE", "sMAPE", "mean_wQuantileLoss", "MSE", "RMSE"]

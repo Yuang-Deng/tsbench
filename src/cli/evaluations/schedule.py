@@ -106,10 +106,18 @@ from ._main import evaluations
 )
 @click.option(
     "--max_runtime",
-    default=240,
+    default=60,
     show_default=True,
     help=(
         "The maximum number of hours for which individual evaluations may run."
+    ),
+)
+@click.option(
+    "--volume_size",
+    default=240,
+    show_default=True,
+    help=(
+        "the volume size of instance."
     ),
 )
 @click.option(
@@ -142,6 +150,7 @@ def schedule(
     instance_type: str,
     docker_image: str,
     max_runtime: int,
+    volume_size: int,
     nskip: int,
     local: bool,
 ):
@@ -195,7 +204,7 @@ def schedule(
                 else instance_type
             ),
             instance_count=1,
-            volume_size=30,
+            volume_size=volume_size,
             max_run=max_runtime * 60 * 60,
             image_uri=image_uri(docker_image),
             source_dir=str(
@@ -238,3 +247,5 @@ def schedule(
         print(f">>> Launched job: {estimator.latest_training_job.name}")  # type: ignore
 
     print(">>> Successfully scheduled all training jobs.")
+
+schedule()

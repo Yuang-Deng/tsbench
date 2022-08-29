@@ -51,7 +51,7 @@ class AutoGluonPredictor(Predictor):
         assert cancat_len % self.prediction_length == 0
         ts_num = cancat_len // self.prediction_length
 
-        # resault wraper
+        # result wraper
         colums = outputs.columns[1:]
         for i in range(ts_num):
             cur_val = outputs.values[i * self.prediction_length : (i + 1) * self.prediction_length, 1:].T

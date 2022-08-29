@@ -21,13 +21,15 @@ from cli.evaluations._main import evaluations
 
 BASELINES = ["arima", "ets", "prophet", "mqcnn"]
 
+EXPERIMENT_MODEL = ["autopytorch"]
+
 METRICS = ["mase", "smape", "nrmse", "nd", "ncrps"]
 
-# DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly", "m4_monthly", 
-#     "m4_weekly", "m4_daily", "m4_hourly", "m4_yearly", "tourism_quarterly", "tourism_monthly", 
-#     "dominick", "weather", "hospital", "covid_deaths", "electricity", "kdd_2018", "nn5", "rossmann", "solar", "taxi", "wiki"]
+DATASETS = ["m3_yearly", "m3_quarterly", "m3_monthly", "m3_other", "m4_quarterly", "m4_monthly", 
+    "m4_weekly", "m4_daily", "m4_hourly", "m4_yearly", "tourism_quarterly", "tourism_monthly", 
+    "dominick", "weather", "hospital", "covid_deaths", "electricity", "kdd_2018", "nn5", "rossmann", "solar", "taxi", "wiki"]
 
-DATASETS = ["covid_deaths", "m3_quarterly", "hospital", "tourism_quarterly", "m4_hourly", "m3_other", "tourism_monthly", "m4_weekly", "m3_monthly", "nn5", "electricity"]
+# DATASETS = ["covid_deaths", "m3_quarterly", "hospital", "tourism_quarterly", "m4_hourly", "m3_other", "tourism_monthly", "m4_weekly", "m3_monthly", "nn5", "electricity"]
 
 @evaluations.command(
     short_help="Visulize results as a table."
@@ -47,7 +49,7 @@ DATASETS = ["covid_deaths", "m3_quarterly", "hospital", "tourism_quarterly", "m4
 @click.option(
     "--metric",
     type=click.Path(),
-    default='ncrps',
+    default='mase',
     help="The metric score shown in table.",
 )
 def summarize(evaluations_path: Path, experiment: str, metric:str):
@@ -60,7 +62,7 @@ def summarize(evaluations_path: Path, experiment: str, metric:str):
         index_models = list(set(res_df.model.values.tolist()))
     else:
         models = os.listdir(source)
-        autogluon_models = set()
+        experiment_models = set()
         for model in models:
             model_dir = Path.joinpath(source, model)
             if Path.is_file(model_dir):
@@ -78,10 +80,12 @@ def summarize(evaluations_path: Path, experiment: str, metric:str):
                     performance = json.load(open(Path.joinpath(hp_dir, 'performance.json'), 'r'))
                     n = len(performance['performances'])
                     res = {}
-                    if model == 'autogluon':
-                        autogluom_model = model + '-' + config['hyperparameters']['presets'] + '-' + str(config['hyperparameters']['run_time'])
-                        autogluon_models.add(autogluom_model)
-                        res['model'] = autogluom_model
+                    if model in EXPERIMENT_MODEL:
+                        experiment_model = model
+                        for cfg_key in config['hyperparameters'].keys():
+                            experiment_model += '-' + str(config['hyperparameters'][cfg_key])
+                        experiment_models.add(experiment_model)
+                        res['model'] = experiment_model
                     else:
                         res['model'] = model
                     res['dataset'] = ds
@@ -92,10 +96,14 @@ def summarize(evaluations_path: Path, experiment: str, metric:str):
                     res['hps'] = hp
                     results.append(res)
 
-        index_models = BASELINES + list(autogluon_models)
+        index_models = BASELINES + list(experiment_models)
         res_df = pd.DataFrame(results)
         res_df.to_csv(Path.joinpath(source, experiment + '.csv'))
         print('results has been saved at:', Path.joinpath(source, experiment + '.csv'))
 
     res_df = res_df.loc[res_df.groupby(['dataset', 'model', 'seed']).val_loss.idxmin()]
+    # res_df.groupby(['dataset', 'model']).describe().to_csv(Path.joinpath(source, experiment + 'out.csv'))
     print(res_df.pivot_table(index='dataset', columns='model', values=metric).reindex(index_models, axis=1))
+    # res_df.pivot_table(index='dataset', columns='model', values=metric).reindex(index_models, axis=1).to_csv(Path.joinpath(source, experiment + 'out.csv'))
+
+# summarize()

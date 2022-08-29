@@ -1,20 +1,16 @@
 from typing import Dict, List, Optional, Tuple
 
-from mxnet.gluon import HybridBlock
-
 from gluonts.core.component import validated
 from gluonts.dataset.common import Dataset
 
 from gluonts.dataset.common import Dataset
 from gluonts.model.estimator import Estimator
 from gluonts.model.predictor import Predictor
-from gluonts.transform import Transformation
 import numpy as np
-import time
 import os
 import copy
-import shutil
 from pathlib import Path
+import shutil
 
 from .auto_pytorch_predictor import AutoPytorchPredictor
 try:
@@ -39,9 +35,9 @@ FREQ_MAP = {
     "W": "1W",
     "H": "1H",
     "1H": "1H",
-    "1min": "1min",
+    "min": "1min",
     "10min": "10min",
-    "30min": "30min"
+    "0.5H": "30min"
 }
 
 class AutoPytorchEstimator(Estimator):
@@ -69,7 +65,6 @@ class AutoPytorchEstimator(Estimator):
         self,
         freq: str,
         prediction_length: int,
-        budget_type: str,
         run_time: int,
         optimize_metric: str,
         seed: int,
@@ -81,17 +76,9 @@ class AutoPytorchEstimator(Estimator):
 
         self.freq = freq
         self.prediction_length = prediction_length
-        self.budget_type = budget_type
         self.run_time = run_time
         self.optimize_metric = optimize_metric
         self.seed = seed
-
-        working_dir = os.getenv("SM_MODEL_DIR") or Path.home() / "models"
-        path = Path(working_dir) / 'APT_run'
-        now = time.strftime("%Y-%m-%d-%H_%M_%S",time.localtime(time.time())) 
-        path_log = str(path / "m3_monthly" / str(now) / budget_type / f'{self.seed}' / "log")
-        path_pred = str(path / "m3_monthly" / str(now) / budget_type / f'{self.seed}' / "output")
-        
 
         resampling_strategy = HoldoutValTypes.time_series_hold_out_validation
         resampling_strategy_args = None
@@ -100,10 +87,8 @@ class AutoPytorchEstimator(Estimator):
             ensemble_size=20,
             resampling_strategy=resampling_strategy,
             resampling_strategy_args=resampling_strategy_args,
-            temporary_directory=path_log,
-            output_directory=path_pred,
         )
-        self.autopytorchts.set_pipeline_config(device="cuda",
+        self.autopytorchts.set_pipeline_config(device="cpu",
                                 torch_num_threads=8,
                                 early_stopping=20)
         
@@ -117,24 +102,11 @@ class AutoPytorchEstimator(Estimator):
         cache_data: bool = False,
         **kwargs,
     ) -> AutoPytorchPredictor:
-        # train_target, train_start = self._data_process(training_data)
         val_target, val_start = self._data_process(validation_data)
 
-        if self.budget_type == "random_search":
-            budget_kwargs = {'budget_type': 'random_search',
-                            'max_budget': None,
-                            'min_budget': None}
-        elif self.budget_type != 'full_budget':
-            from autoPyTorch.constants import FORECASTING_BUDGET_TYPE
-            if self.budget_type not in FORECASTING_BUDGET_TYPE and self.budget_type != 'epochs':
-                raise NotImplementedError('Unknown Budget Type!')
-            budget_kwargs = {'budget_type': self.budget_type,
-                            'max_budget': 50 if self.budget_type == 'epochs' else 1.0,
-                            'min_budget': 5 if self.budget_type == 'epochs' else 0.1}
-        else:
-            budget_kwargs = {'budget_type': 'epochs',
-                            'max_budget': 50,
-                            'min_budget': 50}
+        budget_kwargs = {"budget_type": "epochs",
+                        "max_budget": 50,
+                        "min_budget": 5}
 
         self.autopytorchts.search(
             X_train=None,
@@ -150,8 +122,12 @@ class AutoPytorchEstimator(Estimator):
             min_num_test_instances=1000,
         )
 
+        # refit use train and val
+        # TODO this version of Auto-PyTorch has a bug in reift, it will fixed in future version
+        # remove refit might slightly weaken the final performance
         refit_dataset = self.autopytorchts.dataset.create_refit_set()
         try:
+            print("refit")
             self.autopytorchts.refit(refit_dataset, 0)
         except Exception as e:
             print(e)
@@ -165,6 +141,6 @@ class AutoPytorchEstimator(Estimator):
         return target, start
 
     def create_predictor(
-        self, transformation: Transformation, trained_network: HybridBlock
+        self,
     ) -> Predictor:
         return AutoPytorchEstimator(self.autopytorchts, prediction_length=self.prediction_length, freq=self.freq)

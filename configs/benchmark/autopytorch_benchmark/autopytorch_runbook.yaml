@@ -1,4 +1,4 @@
-seeds: [42]
+seeds: [42, 137, 69, 720, 24]
 
 datasets:
   # - covid_deaths
@@ -11,13 +11,51 @@ datasets:
   # - m4_weekly
   # - m3_monthly
   # - nn5
+  # - electricity
+
   - electricity
+  # - solar
+  - wiki
+  - m3_monthly
+  - m3_quarterly
+  - m3_yearly
+  - m3_other
+  - m4_hourly
+  - m4_daily
+  - m4_weekly
+  - m4_monthly
+  - m4_quarterly
+  - m4_yearly
+  - tourism_monthly
+  - tourism_quarterly
+  - tourism_yearly
+  - nn5
+  # - london_smart_meters
+  # - wind_farms
+  - car_parts
+  - dominick
+  - fred_md
+  - san_francisco_traffic
+  - pedestrian_count
+  - hospital
+  - covid_deaths
+  - kdd_2018
+  # - cif_2016
+  - australian_electricity_demand
+  # - bitcoin
+  - rideshare
+  - vehicle_trips
+  # - weather
+  - temperature_rain
+  # - m1_yearly
+  # - m1_quarterly
+  # - m1_monthly
 
 models:
   autopytorch: 
     - key: run_time
       # values: [43200]
       # values: [3600, 7200, 10800, 14400, 18000, 36000]
-      values: [3600, 7200, 36000, 72000]
+      values: [144000]
     - key: optimize_metric
       values: [mean_MASE_forecasting] # AVAILABLE_METRICS = ["mean_MASE_forecasting", "median_MASE_forecasting", "mean_MAE_forecasting", "median_MAE_forecasting", "mean_MAPE_forecasting", "median_MAPE_forecasting", "mean_MSE_forecasting", "median_MSE_forecasting"]

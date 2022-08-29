@@ -567,7 +567,8 @@ class AutoGluonModelConfig(ModelConfig, TrainConfig):
         return "autogluon"
 
     def create_predictor(self, estimator: Estimator, network: nn.HybridBlock) -> Predictor:
-        return estimator.create_predictor(estimator, network)
+        ag_estimator = cast(AutoGluonEstimator, estimator)
+        return ag_estimator.create_predictor()
 
     def create_estimator(
         self,
@@ -602,7 +603,8 @@ class AutoPytorchModelConfig(ModelConfig, TrainConfig):
         return "autopytorch"
 
     def create_predictor(self, estimator: Estimator, network: nn.HybridBlock) -> Predictor:
-        return estimator.create_predictor(estimator, network)
+        apt_estimator = cast(AutoPytorchEstimator, estimator)
+        return apt_estimator.create_predictor()
 
     def create_estimator(
         self,
@@ -616,7 +618,6 @@ class AutoPytorchModelConfig(ModelConfig, TrainConfig):
         return AutoPytorchEstimator(
             freq=freq,
             prediction_length=prediction_length,
-            budget_type='epochs',
             run_time=self.run_time,
             seed=self.seed,
             optimize_metric=self.optimize_metric,
