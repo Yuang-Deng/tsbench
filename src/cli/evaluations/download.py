@@ -26,8 +26,7 @@ from tsbench.constants import DEFAULT_EVALUATIONS_PATH
 from tsbench.evaluations import aws
 from tsbench.evaluations.aws import default_session
 from tsbench.evaluations.tracking.job import Job, load_jobs_from_analysis
-from ._main import evaluations
-
+from cli.evaluations._main import evaluations
 
 @evaluations.command(short_help="Download evaluations to your file system.")
 @click.option(
@@ -50,6 +49,15 @@ from ._main import evaluations
     ),
 )
 @click.option(
+    "--include_leaderboard",
+    type=bool,
+    default=False,
+    help=(
+        "Whether to download leaderboard, just usefull for"
+        "models that store the leaderboard."
+    ),
+)
+@click.option(
     "--evaluations_path",
     type=click.Path(),
     default=DEFAULT_EVALUATIONS_PATH,
@@ -57,7 +65,7 @@ from ._main import evaluations
     help="The path to which to download the evaluations to.",
 )
 def download(
-    experiment: Optional[str], include_forecasts: bool, evaluations_path: str
+    experiment: Optional[str], include_forecasts: bool, include_leaderboard: bool, evaluations_path: str
 ):
     """
     Downloads either the evaluations of a single AWS Sagemaker experiment or
@@ -66,6 +74,7 @@ def download(
     The evaluations are downloaded to the provided directory.
     """
     target = Path(evaluations_path)
+    target = Path.joinpath(target, experiment)
     target.mkdir(parents=True, exist_ok=True)
 
     if experiment is None:
@@ -73,17 +82,27 @@ def download(
         _download_public_evaluations(
             include_forecasts=include_forecasts, evaluations_path=target
         )
+        other_jobs = []
     else:
         print(f"Downloading data from experiment '{experiment}'...")
         analysis = aws.Analysis(experiment)
+        other_jobs = analysis.other_jobs
         process_map(
             partial(
-                _move_job, target=target, include_forecasts=include_forecasts
+                _move_job, target=target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard
             ),
             load_jobs_from_analysis(analysis),
             chunksize=1,
         )
-
+        # abnormal results
+        abnormal_results = []
+        if len(other_jobs) > 0:
+            for job in other_jobs:
+                res = {}
+                res.update(job.hyperparameters)
+                res['status'] = job.status
+                abnormal_results.append(res)
+                print(res['model'], ' \t', res['dataset'], ' \t', res['status'])
 
 def _download_public_evaluations(
     include_forecasts: bool, evaluations_path: Path
@@ -173,5 +192,5 @@ def _extract_object_names(response: Dict[str, Any]) -> List[str]:
     ]
 
 
-def _move_job(job: Job, target: Path, include_forecasts: bool):
-    job.save(target, include_forecasts=include_forecasts)
+def _move_job(job: Job, target: Path, include_forecasts: bool, include_leaderboard: bool):
+    job.save(target, include_forecasts=include_forecasts, include_leaderboard=include_leaderboard)

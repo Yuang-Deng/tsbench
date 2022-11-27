@@ -24,6 +24,7 @@ from tsbench.gluonts.callbacks import (
     ModelSaverCallback,
     ParameterCountCallback,
 )
+from tsbench.config.model import AutoGluonModelConfig
 from .evaluate import FitResult
 from .logging import log_metric
 
@@ -120,6 +121,11 @@ def fit_estimator(  # pylint: disable=too-many-statements
                 log_metric("num_model_parameters", 0)
                 log_metric("num_gradient_updates", 0)
                 log_metric("training_time", 0)
+            return FitResult(config, [predictor], [0.0], 0)
+
+        # TODO the autogluon can not add callback functions, it just return in there, 
+        # this problem will be solved later
+        if isinstance(config, AutoGluonModelConfig):
             return FitResult(config, [predictor], [0.0], 0)
 
         # Otherwise, we need to load all models that were stored by the callback
